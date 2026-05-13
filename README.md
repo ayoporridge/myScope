@@ -6,6 +6,7 @@
 第一层  事实记忆   Notion 日记/笔记 → DeepSeek 切片 → Notion RAG DB
 第二层  结构记忆   RAG 切片 → DeepSeek 归纳 → Notion LLM Wiki
 第三层  半径记忆   全量订阅源 → FreshRSS → Meilisearch（哈勃半径）
+海马体  对话记忆   Claude 日志 → DeepSeek 提取 → Notion 海马体 DB
 ```
 
 ---
@@ -59,6 +60,7 @@ nano .env   # 或用任意编辑器
 | `NOTION_API_KEY` | https://www.notion.so/my-integrations → 新建 Integration → 复制 Token |
 | `NOTION_RAG_DB_ID` | 见下方「Notion 数据库配置」 |
 | `NOTION_WIKI_DB_ID` | 见下方「Notion 数据库配置」 |
+| `NOTION_HIPPO_DB_ID` | 见下方「Notion 数据库配置 → 海马体数据库」 |
 | `FRESHRSS_API_PASSWORD` | FreshRSS 设置 → 个人资料 → API 管理 → 设置 API 密码 |
 
 ---
@@ -87,6 +89,22 @@ nano .env   # 或用任意编辑器
 | Name | 标题 |
 | tags | 多选 |
 | last_updated | 日期 |
+
+### 海马体数据库（对话记忆）
+
+新建一个 Notion 数据库，添加以下属性：
+
+| 属性名 | 类型 |
+|--------|------|
+| Name | 标题 |
+| memory_id | 文本 |
+| memory_type | 单选（preference / decision / project / failure / personal） |
+| content | 文本 |
+| keywords | 多选 |
+| confidence | 数字 |
+| created_at | 日期 |
+
+将 Database ID 填入 `.env` 的 `NOTION_HIPPO_DB_ID`。
 
 ### 获取数据库 ID
 
@@ -221,6 +239,9 @@ python3 scripts/layer1_rag.py
 
 # 第二层：RAG → LLM Wiki
 python3 scripts/layer2_wiki.py
+
+# 海马体：Claude 日志 → Notion 海马体
+python3 scripts/hippocampus_formation.py
 ```
 
 ### 查看定时任务日志
@@ -229,6 +250,7 @@ python3 scripts/layer2_wiki.py
 tail -f ~/hermes-setup/logs/layer3.log
 tail -f ~/hermes-setup/logs/layer1.log
 tail -f ~/hermes-setup/logs/layer2.log
+tail -f ~/hermes-setup/logs/hippocampus_formation.log
 ```
 
 ### 更新代码
@@ -255,10 +277,48 @@ bash setup.sh
 | 04:30 | FreshRSS → Meilisearch | layer3_index.py |
 | 05:00 | Notion → RAG 切片 | layer1_rag.py |
 | 05:30 | RAG → LLM Wiki | layer2_wiki.py |
+| 06:00 | Claude 日志 → Notion 海马体 | hippocampus_formation.py |
 
 ---
 
-## 九、接入 Claude Code（可选）
+## 九、海马体记忆召回
+
+`hippocampus_recall.py` 查询 Notion 海马体数据库，生成可注入对话的上下文摘要。
+
+### 基本用法
+
+```bash
+# 召回所有记忆（默认最近 20 条）
+python3 scripts/hippocampus_recall.py
+
+# 按关键词过滤
+python3 scripts/hippocampus_recall.py --query "Python"
+
+# 按记忆类型过滤
+python3 scripts/hippocampus_recall.py --type preference
+python3 scripts/hippocampus_recall.py --type decision
+python3 scripts/hippocampus_recall.py --type project
+python3 scripts/hippocampus_recall.py --type failure
+python3 scripts/hippocampus_recall.py --type personal
+
+# 限制返回条数
+python3 scripts/hippocampus_recall.py --limit 10
+```
+
+### 在 Claude 对话中使用
+
+召回结果可直接粘贴到对话开头作为背景上下文，格式如下：
+
+```
+[记忆召回]
+- (preference) 偏好使用 Python + Notion 构建个人工具 [confidence: 0.9]
+- (decision)   2024-03 决定将所有笔记迁移到 Notion [confidence: 0.85]
+...
+```
+
+---
+
+## 十、接入 Claude Code（可选）
 
 部署完 Cloudflare Worker 后，可以把哈勃半径接入 Claude Code 作为搜索工具。
 
@@ -284,13 +344,16 @@ hermes-setup/
 ├── requirements.txt      # Python 依赖
 ├── setup.sh              # 一键安装脚本
 ├── scripts/
-│   ├── layer1_rag.py     # 第一层：Notion → RAG 切片
-│   ├── layer2_wiki.py    # 第二层：RAG → LLM Wiki
-│   └── layer3_index.py   # 第三层：FreshRSS → Meilisearch
+│   ├── layer1_rag.py              # 第一层：Notion → RAG 切片
+│   ├── layer2_wiki.py             # 第二层：RAG → LLM Wiki
+│   ├── layer3_index.py            # 第三层：FreshRSS → Meilisearch
+│   ├── hippocampus_formation.py   # 海马体：Claude 日志 → Notion 海马体
+│   └── hippocampus_recall.py      # 海马体：查询 → 对话上下文摘要
 ├── launchd/
 │   ├── com.hermes.layer1-rag.plist
 │   ├── com.hermes.layer2-wiki.plist
-│   └── com.hermes.layer3-index.plist
+│   ├── com.hermes.layer3-index.plist
+│   └── com.hermes.hippocampus-formation.plist
 ├── cloudflare-worker/
 │   └── worker.js         # Meilisearch API 安全中转
 └── logs/                 # 运行日志（自动创建）
