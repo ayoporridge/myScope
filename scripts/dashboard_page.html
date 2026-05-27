@@ -331,22 +331,31 @@ function renderAndaResults(results, container) {
     container.innerHTML = '<p style="color:#71767b">无内容</p>';
     return;
   }
-  // Anda recall returns various formats — handle flexibly
-  const text = typeof results === 'string' ? results : JSON.stringify(results, null, 2);
-  if (typeof results === 'string') {
-    container.innerHTML = `<div class="browse-item"><div class="content" style="white-space:pre-wrap">${results}</div></div>`;
-  } else if (results.content) {
-    container.innerHTML = `<div class="browse-item"><div class="content" style="white-space:pre-wrap">${results.content}</div></div>`;
-  } else if (Array.isArray(results)) {
-    container.innerHTML = results.map(item => `
-      <div class="browse-item">
-        <div class="title">${item.name || item.title || item.id || ''}</div>
-        <div class="content">${JSON.stringify(item, null, 2).slice(0, 500)}</div>
-      </div>
-    `).join('');
-  } else {
-    container.innerHTML = `<div class="browse-item"><div class="content" style="white-space:pre-wrap;font-size:0.75rem">${JSON.stringify(results, null, 2)}</div></div>`;
+  let html = '';
+  // 统计信息
+  if (results.concepts !== undefined) {
+    html += `<div class="browse-item">
+      <div class="title">图谱统计</div>
+      <div class="content">概念节点：${results.concepts} 个 | 命题关系：${results.propositions} 条 | 对话轮次：${results.conversations} 个</div>
+      <div class="meta">Formation 用量：${(results.formation_usage?.input_tokens/1000000)?.toFixed(1) || 0}M tokens / ${results.formation_usage?.requests || 0} 次请求</div>
+    </div>`;
   }
+  // 最近对话列表
+  if (results.recent_conversations && results.recent_conversations.length > 0) {
+    html += '<div class="browse-item"><div class="title">最近对话记录</div></div>';
+    results.recent_conversations.forEach(conv => {
+      const id = conv.id || conv;
+      const ts = conv.created_at || conv.timestamp || '';
+      html += `<div class="browse-item">
+        <div class="content" style="font-size:0.75rem">#${typeof id === 'object' ? JSON.stringify(id) : id}</div>
+        ${ts ? `<div class="meta">${ts}</div>` : ''}
+      </div>`;
+    });
+  }
+  if (!html) {
+    html = `<div class="browse-item"><div class="content" style="white-space:pre-wrap;font-size:0.75rem">${JSON.stringify(results, null, 2)}</div></div>`;
+  }
+  container.innerHTML = html;
 }
 </script>
 </body>

@@ -26,6 +26,8 @@ HTML_FILE = Path(__file__).parent / "dashboard_page.html"
 
 MEMORY_URL = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
+MEILI_URL = os.environ.get("MEILI_URL", "http://localhost:7700")
+MEILI_KEY = os.environ.get("MEILI_KEY", "memory-master-key-2026")
 ANDA_BASE_URL = os.environ.get("ANDA_BASE_URL", "http://localhost:8090")
 ANDA_SPACE_ID = os.environ.get("ANDA_SPACE_ID", "anda_main")
 ANDA_SPACE_TOKEN = os.environ.get("ANDA_SPACE_TOKEN", "")
@@ -89,25 +91,25 @@ def get_metrics(days: int = 7) -> list[dict]:
 
 
 def get_indexes() -> dict:
-    """实时查询各索引文档数"""
-    headers = {"Authorization": f"Bearer {MEMORY_TOKEN}", "Content-Type": "application/json"}
+    """实时查询各索引文档数（使用 Meilisearch stats API 获取真实数量）"""
     indexes = {}
 
-    # Meilisearch indexes
-    for idx in ["memory_chunks", "wiki_entries", "hubble_radius"]:
-        try:
-            r = http_req.get(
-                f"{MEMORY_URL}/search",
-                params={"q": "", "index": idx, "limit": 1},
-                headers=headers,
-                timeout=5,
-            )
-            if r.status_code == 200:
-                data = r.json()
-                indexes[idx] = data.get("total", data.get("estimatedTotalHits", len(data.get("results", []))))
-            else:
+    # Meilisearch: 直接用 stats API 获取精确文档数
+    try:
+        r = http_req.get(
+            f"{MEILI_URL}/stats",
+            headers={"Authorization": f"Bearer {MEILI_KEY}"},
+            timeout=5,
+        )
+        if r.status_code == 200:
+            stats = r.json().get("indexes", {})
+            for idx in ["memory_chunks", "wiki_entries", "hubble_radius"]:
+                indexes[idx] = stats.get(idx, {}).get("numberOfDocuments", -1)
+        else:
+            for idx in ["memory_chunks", "wiki_entries", "hubble_radius"]:
                 indexes[idx] = -1
-        except Exception:
+    except Exception:
+        for idx in ["memory_chunks", "wiki_entries", "hubble_radius"]:
             indexes[idx] = -1
 
     # Anda concepts/propositions
@@ -153,18 +155,37 @@ def browse_index(index: str, query: str = "", limit: int = 20) -> dict:
 
     elif index == "anda":
         try:
-            # Use recall endpoint to browse Anda graph
-            r = http_req.post(
-                f"{ANDA_BASE_URL}/v1/{ANDA_SPACE_ID}/recall",
-                headers={"Authorization": f"Bearer {ANDA_SPACE_TOKEN}", "Content-Type": "application/json"},
-                json={"query": query or "recent knowledge", "top_k": limit},
-                timeout=10,
+            # Use info + conversations list (fast, no LLM call)
+            r = http_req.get(
+                f"{ANDA_BASE_URL}/v1/{ANDA_SPACE_ID}/info",
+                headers={"Authorization": f"Bearer {ANDA_SPACE_TOKEN}"},
+                timeout=5,
             )
             if r.status_code == 200:
-                data = r.json().get("result", {})
-                return {"ok": True, "index": "anda", "results": data}
+                info = r.json().get("result", {})
+                # Also try to get conversations list
+                r2 = http_req.get(
+                    f"{ANDA_BASE_URL}/v1/{ANDA_SPACE_ID}/conversations",
+                    headers={"Authorization": f"Bearer {ANDA_SPACE_TOKEN}"},
+                    timeout=5,
+                )
+                conversations = []
+                if r2.status_code == 200:
+                    conversations = r2.json().get("result", [])
+                return {
+                    "ok": True,
+                    "index": "anda",
+                    "results": {
+                        "concepts": info.get("concepts", 0),
+                        "propositions": info.get("propositions", 0),
+                        "conversations": info.get("conversations", 0),
+                        "formation_usage": info.get("formation_usage", {}),
+                        "recall_usage": info.get("recall_usage", {}),
+                        "recent_conversations": conversations[-20:] if conversations else [],
+                    }
+                }
             else:
-                return {"ok": False, "error": f"HTTP {r.status_code}: {r.text[:200]}"}
+                return {"ok": False, "error": f"HTTP {r.status_code}"}
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
