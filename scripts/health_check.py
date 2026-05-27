@@ -173,6 +173,13 @@ def check_quality() -> list[str]:
             alerts.append(
                 f"🟡 `hippocampus_formation` 有效消息仅 {meaningful} 条（阈值 5）"
             )
+        # 检查提交是否成功
+        batches_success = latest.get("batches_success", 0)
+        batches_total = latest.get("batches_total", 0)
+        if batches_total > 0 and batches_success < batches_total:
+            alerts.append(
+                f"🔴 `hippocampus_formation` 提交失败（{batches_success}/{batches_total} 批成功）"
+            )
 
     # 检查 2：memory_chunks 新增 < 3 条
     rag_metrics = [

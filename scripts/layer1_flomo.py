@@ -18,6 +18,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
+from _metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -203,6 +204,7 @@ def push_chunks(docs: list[dict]):
 
 # ── 主流程 ────────────────────────────────────────────────
 def main():
+    start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始 flomo 采集（Mac mini）")
 
     state = load_state()
@@ -211,6 +213,9 @@ def main():
     if not texts:
         print("  无新 memo，跳过")
         save_state({"last_run": datetime.now().isoformat()})
+        record_last_run("layer1_flomo")
+        record_metrics("layer1_flomo", memos=0, chunks=0,
+                       run_duration_seconds=round(time.time() - start_time, 1))
         return
 
     print(f"  共收集 {len(texts)} 条 memo，开始切片...")
@@ -236,6 +241,9 @@ def main():
     push_chunks(all_chunks)
 
     save_state({"last_run": datetime.now().isoformat()})
+    record_last_run("layer1_flomo")
+    record_metrics("layer1_flomo", memos=len(texts), chunks=len(all_chunks),
+                   run_duration_seconds=round(time.time() - start_time, 1))
     print(f"[完成] flomo 采集 {len(all_chunks)} 条记忆碎片")
 
 
