@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyScope Dashboard</title>
+<title>MyScope 仪表盘</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,7 +13,7 @@ h1 { font-size: 1.4rem; margin-bottom: 6px; color: #fff; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
 .card { background: #1a1f25; border: 1px solid #2f3336; border-radius: 12px; padding: 16px; }
-.card h2 { font-size: 0.9rem; color: #71767b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.card h2 { font-size: 0.9rem; color: #71767b; margin-bottom: 12px; letter-spacing: 0.5px; }
 .status-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .status-item { background: #0f1419; border-radius: 8px; padding: 10px 14px; flex: 1; min-width: 140px; }
 .status-item .name { font-size: 0.75rem; color: #71767b; margin-bottom: 4px; }
@@ -37,94 +37,94 @@ canvas { max-height: 220px; }
 </style>
 </head>
 <body>
-<h1>MyScope Dashboard</h1>
-<p class="subtitle">Memory System Health &amp; Data Flow &mdash; <span id="clock"></span></p>
+<h1>MyScope 仪表盘</h1>
+<p class="subtitle">记忆系统运行状态与数据流动 &mdash; <span id="clock"></span></p>
 
 <!-- Row 1: Status + Indexes -->
 <div class="grid">
   <div class="card">
-    <h2>Script Liveness</h2>
-    <div id="status-container" class="status-grid">Loading...</div>
+    <h2>脚本存活状态</h2>
+    <div id="status-container" class="status-grid">加载中...</div>
   </div>
   <div class="card">
-    <h2>Data Volumes</h2>
-    <div id="index-container" class="index-grid">Loading...</div>
+    <h2>数据总量</h2>
+    <div id="index-container" class="index-grid">加载中...</div>
   </div>
 </div>
 
 <!-- Row 2: Charts -->
 <div class="grid">
   <div class="card">
-    <h2>Formation Quality (7d)</h2>
+    <h2>Formation 质量趋势（近 7 天）</h2>
     <canvas id="formationChart"></canvas>
   </div>
   <div class="card">
-    <h2>Daily Throughput</h2>
+    <h2>每日吞吐量</h2>
     <canvas id="throughputChart"></canvas>
   </div>
 </div>
 
 <!-- Row 3: Data Flow -->
 <div class="card" style="margin-bottom:20px">
-  <h2>Data Pipeline</h2>
+  <h2>数据管道动线</h2>
   <div class="flow-container">
     <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
       <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1d9bf0"/></marker></defs>
-      <!-- Sources -->
+      <!-- 数据源 -->
       <rect class="flow-node" x="10" y="20" width="110" height="36"/>
-      <text class="flow-label" x="65" y="43">WeChat/Obsidian</text>
+      <text class="flow-label" x="65" y="43">微信/Obsidian</text>
       <rect class="flow-node" x="10" y="70" width="110" height="36"/>
       <text class="flow-label" x="65" y="93">Flomo</text>
       <rect class="flow-node" x="10" y="120" width="110" height="36"/>
-      <text class="flow-label" x="65" y="143">FreshRSS/公众号</text>
+      <text class="flow-label" x="65" y="143">RSS/公众号</text>
       <rect class="flow-node" x="10" y="155" width="110" height="36"/>
       <text class="flow-label" x="65" y="178">AI 对话/Dayflow</text>
-      <!-- Layer 1 -->
+      <!-- 第一层 -->
       <rect class="flow-node" x="200" y="30" width="130" height="50"/>
-      <text class="flow-label" x="265" y="53">Layer 1</text>
-      <text class="flow-label" x="265" y="68" style="font-size:9px;fill:#71767b">memory_chunks</text>
-      <text class="flow-num" x="265" y="83" id="flow-l1">—</text>
-      <!-- Layer 3 -->
+      <text class="flow-label" x="265" y="50">第一层：事实记忆</text>
+      <text class="flow-label" x="265" y="65" style="font-size:9px;fill:#71767b">memory_chunks</text>
+      <text class="flow-num" x="265" y="80" id="flow-l1">—</text>
+      <!-- 第三层 -->
       <rect class="flow-node" x="200" y="110" width="130" height="50"/>
-      <text class="flow-label" x="265" y="133">Layer 3</text>
-      <text class="flow-label" x="265" y="148" style="font-size:9px;fill:#71767b">hubble_radius</text>
-      <text class="flow-num" x="265" y="163" id="flow-l3">—</text>
-      <!-- Layer 2 -->
+      <text class="flow-label" x="265" y="130">第三层：哈勃半径</text>
+      <text class="flow-label" x="265" y="145" style="font-size:9px;fill:#71767b">hubble_radius</text>
+      <text class="flow-num" x="265" y="160" id="flow-l3">—</text>
+      <!-- 第二层 -->
       <rect class="flow-node" x="420" y="60" width="130" height="60"/>
-      <text class="flow-label" x="485" y="83">Layer 2</text>
-      <text class="flow-label" x="485" y="98" style="font-size:9px;fill:#71767b">wiki_entries</text>
+      <text class="flow-label" x="485" y="80">第二层：结构知识</text>
+      <text class="flow-label" x="485" y="95" style="font-size:9px;fill:#71767b">wiki_entries</text>
       <text class="flow-num" x="485" y="113" id="flow-l2">—</text>
-      <!-- Anda -->
+      <!-- Anda 图谱 -->
       <rect class="flow-node" x="420" y="145" width="130" height="45"/>
-      <text class="flow-label" x="485" y="165">Anda Graph</text>
+      <text class="flow-label" x="485" y="165">Anda 知识图谱</text>
       <text class="flow-num" x="485" y="180" id="flow-anda">—</text>
-      <!-- MCP -->
+      <!-- MCP 出口 -->
       <rect class="flow-node" x="640" y="70" width="140" height="60" style="stroke:#1d9bf0"/>
-      <text class="flow-label" x="710" y="95" style="fill:#1d9bf0">MCP Server</text>
-      <text class="flow-label" x="710" y="112" style="font-size:9px;fill:#71767b">search / recall</text>
-      <!-- Arrows -->
+      <text class="flow-label" x="710" y="95" style="fill:#1d9bf0">MCP 记忆接口</text>
+      <text class="flow-label" x="710" y="112" style="font-size:9px;fill:#71767b">搜索 / 召回</text>
+      <!-- 箭头 -->
       <path class="flow-arrow" d="M120,38 L195,50"/>
       <path class="flow-arrow" d="M120,88 L195,55"/>
       <path class="flow-arrow" d="M120,138 L195,130"/>
       <path class="flow-arrow" d="M120,173 L195,160"/>
-      <!-- L1 → L2 -->
+      <!-- 第一层 → 第二层 -->
       <path class="flow-arrow" d="M330,55 L415,80"/>
-      <!-- L3 → L2 (cross-layer) -->
+      <!-- 第三层 → 第二层（跨层综合） -->
       <path class="flow-arrow" d="M330,130 L415,100" style="stroke:#f7b955;stroke-dasharray:4"/>
-      <!-- Anda ← sources -->
+      <!-- 数据源 → Anda -->
       <path class="flow-arrow" d="M120,173 C180,173 360,167 415,167"/>
       <!-- → MCP -->
       <path class="flow-arrow" d="M550,90 L635,95"/>
       <path class="flow-arrow" d="M550,167 L635,110"/>
     </svg>
   </div>
-  <p class="refresh-info">Dashed line = Layer 2 cross-layer synthesis (hubble → wiki)</p>
+  <p class="refresh-info">虚线 = 第二层跨层综合（从哈勃半径拉取相关内容归纳进 Wiki）</p>
 </div>
 
-<p class="refresh-info">Auto-refresh every 30s | <span id="last-update">—</span></p>
+<p class="refresh-info">每 30 秒自动刷新 | 上次更新：<span id="last-update">—</span></p>
 
 <script>
-const API = '';  // same origin
+const API = '';
 
 async function fetchJSON(path) {
   const r = await fetch(API + path);
@@ -133,10 +133,11 @@ async function fetchJSON(path) {
 
 function renderStatus(data) {
   const el = document.getElementById('status-container');
+  const statusText = { green: '正常', yellow: '注意', red: '异常' };
   el.innerHTML = data.scripts.map(s => `
     <div class="status-item">
       <div class="name">${s.name}</div>
-      <div class="time"><span class="dot dot-${s.status}"></span>${s.hours_ago >= 0 ? s.hours_ago + 'h ago' : 'never'}</div>
+      <div class="time"><span class="dot dot-${s.status}"></span>${s.hours_ago >= 0 ? s.hours_ago + ' 小时前' : '从未运行'}</div>
     </div>
   `).join('');
 }
@@ -144,11 +145,11 @@ function renderStatus(data) {
 function renderIndexes(data) {
   const el = document.getElementById('index-container');
   const items = [
-    { key: 'memory_chunks', label: 'Chunks' },
-    { key: 'wiki_entries', label: 'Wiki' },
-    { key: 'hubble_radius', label: 'Hubble' },
-    { key: 'anda_concepts', label: 'Concepts' },
-    { key: 'anda_propositions', label: 'Props' },
+    { key: 'memory_chunks', label: '事实碎片' },
+    { key: 'wiki_entries', label: 'Wiki 条目' },
+    { key: 'hubble_radius', label: '哈勃半径' },
+    { key: 'anda_concepts', label: '图谱概念' },
+    { key: 'anda_propositions', label: '图谱命题' },
   ];
   el.innerHTML = items.map(i => `
     <div class="index-item">
@@ -156,11 +157,10 @@ function renderIndexes(data) {
       <div class="label">${i.label}</div>
     </div>
   `).join('');
-  // Update flow diagram numbers
   document.getElementById('flow-l1').textContent = data.memory_chunks >= 0 ? data.memory_chunks : '?';
   document.getElementById('flow-l2').textContent = data.wiki_entries >= 0 ? data.wiki_entries : '?';
   document.getElementById('flow-l3').textContent = data.hubble_radius >= 0 ? data.hubble_radius : '?';
-  const anda = data.anda_concepts >= 0 ? `${data.anda_concepts}C/${data.anda_propositions}P` : '?';
+  const anda = data.anda_concepts >= 0 ? `${data.anda_concepts}C / ${data.anda_propositions}P` : '?';
   document.getElementById('flow-anda').textContent = anda;
 }
 
@@ -168,7 +168,6 @@ let formationChart = null;
 let throughputChart = null;
 
 function renderCharts(metrics) {
-  // Group by date
   const byDate = {};
   metrics.forEach(m => {
     if (!byDate[m.date]) byDate[m.date] = {};
@@ -176,27 +175,27 @@ function renderCharts(metrics) {
   });
   const dates = Object.keys(byDate).sort();
 
-  // Formation chart
+  // Formation 质量
   const ctx1 = document.getElementById('formationChart').getContext('2d');
   const formData = {
     labels: dates,
     datasets: [
-      { label: 'Total', data: dates.map(d => byDate[d].hippocampus_formation?.total_messages || 0), borderColor: '#536471', tension: 0.3 },
-      { label: 'Meaningful', data: dates.map(d => byDate[d].hippocampus_formation?.meaningful_messages || 0), borderColor: '#00ba7c', tension: 0.3 },
-      { label: 'Filtered', data: dates.map(d => byDate[d].hippocampus_formation?.filtered_messages || 0), borderColor: '#f4212e', tension: 0.3 },
+      { label: '原始消息', data: dates.map(d => byDate[d].hippocampus_formation?.total_messages || 0), borderColor: '#536471', tension: 0.3 },
+      { label: '有效消息', data: dates.map(d => byDate[d].hippocampus_formation?.meaningful_messages || 0), borderColor: '#00ba7c', tension: 0.3 },
+      { label: '过滤噪音', data: dates.map(d => byDate[d].hippocampus_formation?.filtered_messages || 0), borderColor: '#f4212e', tension: 0.3 },
     ]
   };
   if (formationChart) formationChart.destroy();
   formationChart = new Chart(ctx1, { type: 'line', data: formData, options: { responsive: true, plugins: { legend: { labels: { color: '#71767b', boxWidth: 12 } } }, scales: { x: { ticks: { color: '#536471' } }, y: { ticks: { color: '#536471' }, beginAtZero: true } } } });
 
-  // Throughput chart
+  // 每日吞吐
   const ctx2 = document.getElementById('throughputChart').getContext('2d');
   const tpData = {
     labels: dates,
     datasets: [
-      { label: 'L1 chunks', data: dates.map(d => byDate[d].layer1_rag?.chunks_produced || byDate[d].layer1_flomo?.chunks || 0), backgroundColor: '#1d9bf044', borderColor: '#1d9bf0', tension: 0.3 },
-      { label: 'L2 wiki', data: dates.map(d => byDate[d].layer2_wiki?.wiki_entries_written || 0), backgroundColor: '#00ba7c44', borderColor: '#00ba7c', tension: 0.3 },
-      { label: 'L3 articles', data: dates.map(d => byDate[d].layer3_wechat?.articles_indexed || 0), backgroundColor: '#f7b95544', borderColor: '#f7b955', tension: 0.3 },
+      { label: '第一层切片', data: dates.map(d => byDate[d].layer1_rag?.chunks_produced || byDate[d].layer1_flomo?.chunks || 0), backgroundColor: '#1d9bf044', borderColor: '#1d9bf0', tension: 0.3 },
+      { label: '第二层 Wiki', data: dates.map(d => byDate[d].layer2_wiki?.wiki_entries_written || 0), backgroundColor: '#00ba7c44', borderColor: '#00ba7c', tension: 0.3 },
+      { label: '第三层文章', data: dates.map(d => byDate[d].layer3_wechat?.articles_indexed || 0), backgroundColor: '#f7b95544', borderColor: '#f7b955', tension: 0.3 },
     ]
   };
   if (throughputChart) throughputChart.destroy();
@@ -213,9 +212,9 @@ async function refresh() {
     renderStatus(status);
     renderIndexes(indexes);
     renderCharts(metrics);
-    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-CN');
   } catch (e) {
-    console.error('Refresh failed:', e);
+    console.error('刷新失败:', e);
   }
 }
 
@@ -223,7 +222,6 @@ function updateClock() {
   document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN', { hour12: false });
 }
 
-// Init
 refresh();
 setInterval(refresh, 30000);
 setInterval(updateClock, 1000);
