@@ -131,6 +131,46 @@ def get_indexes() -> dict:
     return indexes
 
 
+def browse_index(index: str, query: str = "", limit: int = 20) -> dict:
+    """浏览某个索引的具体内容"""
+    headers = {"Authorization": f"Bearer {MEMORY_TOKEN}", "Content-Type": "application/json"}
+
+    if index in ("memory_chunks", "wiki_entries", "hubble_radius"):
+        try:
+            r = http_req.get(
+                f"{MEMORY_URL}/search",
+                params={"q": query, "index": index, "limit": limit},
+                headers=headers,
+                timeout=10,
+            )
+            if r.status_code == 200:
+                data = r.json()
+                return {"ok": True, "index": index, "total": data.get("total", 0), "results": data.get("results", [])}
+            else:
+                return {"ok": False, "error": f"HTTP {r.status_code}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    elif index == "anda":
+        try:
+            # Use recall endpoint to browse Anda graph
+            r = http_req.post(
+                f"{ANDA_BASE_URL}/v1/{ANDA_SPACE_ID}/recall",
+                headers={"Authorization": f"Bearer {ANDA_SPACE_TOKEN}", "Content-Type": "application/json"},
+                json={"query": query or "recent knowledge", "top_k": limit},
+                timeout=10,
+            )
+            if r.status_code == 200:
+                data = r.json().get("result", {})
+                return {"ok": True, "index": "anda", "results": data}
+            else:
+                return {"ok": False, "error": f"HTTP {r.status_code}: {r.text[:200]}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    return {"ok": False, "error": f"unknown index: {index}"}
+
+
 class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -146,6 +186,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json_response(get_metrics(days))
         elif path == "/api/indexes":
             self._json_response(get_indexes())
+        elif path == "/api/browse":
+            index = params.get("index", [""])[0]
+            query = params.get("q", [""])[0]
+            limit = int(params.get("limit", [20])[0])
+            self._json_response(browse_index(index, query, limit))
         else:
             self.send_error(404)
 
