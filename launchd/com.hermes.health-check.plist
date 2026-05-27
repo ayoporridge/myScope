@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MyScope 健康检查
+  存活性 + 质量检查 → 飞书告警
+  每天 06:30 运行（hippocampus_formation 之后）
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.hermes.health-check</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>HERMES_DIR/scripts/health_check.py</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>HERMES_DIR</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>6</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>HERMES_DIR/logs/health_check.log</string>
+  <key>StandardErrorPath</key>
+  <string>HERMES_DIR/logs/health_check_err.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

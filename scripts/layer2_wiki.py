@@ -2,102 +2,90 @@
 """
 layer2_wiki.py
 第二层：结构记忆 (LLM Wiki)
-Notion 最近内容 → DeepSeek 归纳/结构化 → Notion Wiki 数据库
+Meilisearch memory_chunks → Xiaomi mimo 归纳/结构化 → Meilisearch wiki_entries
 每天凌晨 5:30 运行（第一层跑完后）
 """
 
 import os
 import json
 import re
+import hashlib
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
-from notion_client import Client
 from openai import OpenAI
+import requests
+from _metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-NOTION_KEY   = os.environ["NOTION_API_KEY"]
-WIKI_DB_ID   = os.environ["NOTION_WIKI_DB_ID"]
-RAG_DB_ID    = os.environ["NOTION_RAG_DB_ID"]
-DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
+XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
+MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
+MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
 
-notion = Client(auth=NOTION_KEY)
-llm    = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
+HEADERS = {
+    "Authorization": f"Bearer {MEMORY_TOKEN}",
+    "Content-Type": "application/json",
+}
 
-
-# ── 从 RAG DB 拉取最近切片 ────────────────────────────────
-def get_recent_chunks(hours=25) -> list[dict]:
-    """获取最近 N 小时写入的 RAG 切片"""
-    cutoff = (datetime.now() - timedelta(hours=hours)).isoformat() + "Z"
-    results = notion.databases.query(
-        database_id=RAG_DB_ID,
-        filter={
-            "property": "created_at",
-            "date": {"on_or_after": cutoff}
-        },
-        sorts=[{"property": "created_at", "direction": "ascending"}]
-    ).get("results", [])
-
-    chunks = []
-    for r in results:
-        props = r.get("properties", {})
-        content_rt = props.get("content", {}).get("rich_text", [])
-        content = content_rt[0]["plain_text"] if content_rt else ""
-        keywords = [k["name"] for k in props.get("keywords", {}).get("multi_select", [])]
-        chunks.append({"content": content, "keywords": keywords})
-    return chunks
+llm = OpenAI(api_key=XIAOMI_KEY, base_url="https://token-plan-cn.xiaomimimo.com/v1")
 
 
-# ── 查询已有 Wiki 条目 ────────────────────────────────────
-def get_existing_wiki_entries() -> list[dict]:
-    results = notion.databases.query(database_id=WIKI_DB_ID).get("results", [])
-    entries = []
-    for r in results:
-        props = r.get("properties", {})
-        title_rt = props.get("Name", {}).get("title", [])
-        title = title_rt[0]["plain_text"] if title_rt else ""
-        tags = [t["name"] for t in props.get("tags", {}).get("multi_select", [])]
-        entries.append({"id": r["id"], "title": title, "tags": tags})
-    return entries
-
-def update_wiki_entry(page_id: str, new_content: str):
-    """更新已有 Wiki 条目的正文"""
-    notion.blocks.children.append(
-        block_id=page_id,
-        children=[{
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {
-                "rich_text": [{
-                    "type": "text",
-                    "text": {"content": f"\n---\n[{datetime.now().strftime('%Y-%m-%d')} 更新]\n{new_content[:1500]}"}
-                }]
-            }
-        }]
-    )
-
-def create_wiki_entry(title: str, content: str, tags: list[str]):
-    """创建新 Wiki 条目"""
-    notion.pages.create(
-        parent={"database_id": WIKI_DB_ID},
-        properties={
-            "Name": {"title": [{"text": {"content": title}}]},
-            "tags": {"multi_select": [{"name": t} for t in tags[:8]]},
-            "last_updated": {"date": {"start": datetime.now().isoformat()}},
-        },
-        children=[{
-            "object": "block",
-            "type": "paragraph",
-            "paragraph": {
-                "rich_text": [{"type": "text", "text": {"content": content[:2000]}}]
-            }
-        }]
-    )
+# ── 从 Meilisearch 读取最近切片 ──────────────────────────────
+def get_recent_chunks() -> list[dict]:
+    """获取 memory_chunks 中最近 25 小时的切片（简单做法：搜索全量取最近的）"""
+    try:
+        # 用一个宽泛查询取最近文档（memory-api 应该支持按时间排序）
+        # 如果 memory-api 不支持列举，用空查询
+        r = requests.get(
+            f"{MEMORY_URL}/search",
+            params={"q": "", "index": "memory_chunks", "limit": 200},
+            headers=HEADERS,
+            timeout=15,
+        )
+        r.raise_for_status()
+        data = r.json()
+        results = data.get("results", [])
+        # 过滤最近 25 小时的（通过 created_at 字段）
+        cutoff = (datetime.now().timestamp() - 25 * 3600)
+        recent = []
+        for item in results:
+            created = item.get("created_at", "")
+            if created:
+                try:
+                    ts = datetime.fromisoformat(created.replace("Z", "+00:00")).timestamp()
+                    if ts >= cutoff:
+                        recent.append(item)
+                        continue
+                except (ValueError, TypeError):
+                    pass
+            # 如果没有时间戳字段，默认包含
+            recent.append(item)
+        return recent
+    except Exception as e:
+        print(f"  [读取 memory_chunks 失败] {e}")
+        return []
 
 
-# ── DeepSeek Wiki 归纳 ────────────────────────────────────
+# ── 获取已有 Wiki 条目 ───────────────────────────────────────
+def get_existing_wiki_titles() -> list[str]:
+    """获取现有 wiki_entries 的标题列表"""
+    try:
+        r = requests.get(
+            f"{MEMORY_URL}/search",
+            params={"q": "", "index": "wiki_entries", "limit": 200},
+            headers=HEADERS,
+            timeout=15,
+        )
+        r.raise_for_status()
+        results = r.json().get("results", [])
+        return [item.get("title", "") for item in results if item.get("title")]
+    except Exception:
+        return []
+
+
+# ── LLM Wiki 归纳 ───────────────────────────────────────────
 WIKI_PROMPT = """\
 你是一个个人知识库维护助手。
 
@@ -109,85 +97,113 @@ WIKI_PROMPT = """\
 【现有 Wiki 条目】（仅标题）
 {existing_titles}
 
-请分析这些碎片，输出一个 JSON 数组，每个对象代表一个 Wiki 操作：
-- "action": "create"（新建条目）或 "update"（更新已有条目）
-- "title": 条目标题
-- "content": 要写入的内容（结构化散文，最多300字）
+请分析这些碎片，输出一个 JSON 数组，每个对象代表一个 Wiki 条目：
+- "title": 条目标题（简洁，5-15字）
+- "content": 结构化内容（300字以内，散文或要点式）
 - "tags": 标签列表（3-6个）
-- "merge_with": 若 action=update，写已有条目的精确标题；若 action=create 则为 null
+- "action": "create"（全新主题）或 "update"（与已有条目相关）
 
 原则：
 - 相关度高的碎片合并进同一条目
-- 已有条目有新信息时 action=update
-- 全新主题时 action=create
+- 只产出有信息量的条目，不要凑数
 - 只输出 JSON，不要其他文字
 """
 
-def plan_wiki_updates(chunks: list[dict], existing: list[dict]) -> list[dict]:
-    chunks_text = "\n".join(f"- {c['content']}" for c in chunks[:50])
-    titles_text = "\n".join(f"- {e['title']}" for e in existing[:100])
 
-    resp = llm.chat.completions.create(
-        model="deepseek-chat",
-        messages=[{
-            "role": "user",
-            "content": WIKI_PROMPT.format(
-                chunks=chunks_text,
-                existing_titles=titles_text
-            )
-        }],
-        temperature=0.3,
-    )
-    raw = resp.choices[0].message.content.strip()
-    match = re.search(r"\[.*\]", raw, re.DOTALL)
-    if not match:
+def plan_wiki(chunks: list[dict], existing_titles: list[str]) -> list[dict]:
+    chunks_text = "\n".join(f"- {c.get('content', c.get('text', ''))}" for c in chunks[:50])
+    titles_text = "\n".join(f"- {t}" for t in existing_titles[:100]) or "（暂无）"
+
+    try:
+        resp = llm.chat.completions.create(
+            model="mimo-v2.5",
+            messages=[{
+                "role": "user",
+                "content": WIKI_PROMPT.format(chunks=chunks_text, existing_titles=titles_text)
+            }],
+            temperature=0.3,
+        )
+        raw = resp.choices[0].message.content.strip()
+        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        if not match:
+            return []
+        return json.loads(match.group())
+    except Exception as e:
+        print(f"  [LLM 归纳失败] {e}")
         return []
-    return json.loads(match.group())
+
+
+# ── 写入 Meilisearch wiki_entries ────────────────────────────
+def push_wiki_entries(entries: list[dict]):
+    """写入 wiki_entries 索引"""
+    if not entries:
+        return
+    docs = []
+    for entry in entries:
+        title = entry.get("title", "")
+        content = entry.get("content", "")
+        if not title or not content:
+            continue
+        doc_id = hashlib.md5(title.encode()).hexdigest()
+        docs.append({
+            "id": doc_id,
+            "title": title,
+            "content": content,
+            "tags": entry.get("tags", []),
+            "updated_at": datetime.now().isoformat(),
+        })
+
+    if not docs:
+        return
+
+    try:
+        r = requests.post(
+            f"{MEMORY_URL}/ingest",
+            headers=HEADERS,
+            json={"index": "wiki_entries", "documents": docs},
+            timeout=30,
+        )
+        r.raise_for_status()
+        count = r.json().get("count", len(docs))
+        print(f"  [memory-api] 写入 {count} 条到 wiki_entries")
+    except Exception as e:
+        print(f"  [写入 wiki_entries 失败] {e}")
 
 
 # ── 主流程 ────────────────────────────────────────────────
 def main():
+    start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始第二层 LLM Wiki 更新")
 
-    chunks = get_recent_chunks(hours=25)
+    chunks = get_recent_chunks()
     if not chunks:
         print("  没有新切片，跳过")
+        record_last_run("layer2_wiki")
+        record_metrics(
+            "layer2_wiki",
+            new_chunks_processed=0,
+            wiki_entries_written=0,
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
         return
     print(f"  发现 {len(chunks)} 条新切片")
 
-    existing = get_existing_wiki_entries()
-    print(f"  现有 Wiki 条目：{len(existing)} 条")
+    existing_titles = get_existing_wiki_titles()
+    print(f"  现有 Wiki 条目：{len(existing_titles)} 条")
 
-    operations = plan_wiki_updates(chunks, existing)
-    print(f"  DeepSeek 规划了 {len(operations)} 个 Wiki 操作")
+    operations = plan_wiki(chunks, existing_titles)
+    print(f"  LLM 规划了 {len(operations)} 个 Wiki 条目")
 
-    existing_map = {e["title"]: e["id"] for e in existing}
+    push_wiki_entries(operations)
 
-    for op in operations:
-        action  = op.get("action")
-        title   = op.get("title", "")
-        content = op.get("content", "")
-        tags    = op.get("tags", [])
-
-        if not title or not content:
-            continue
-
-        if action == "update":
-            merge_title = op.get("merge_with") or title
-            page_id = existing_map.get(merge_title)
-            if page_id:
-                update_wiki_entry(page_id, content)
-                print(f"  [更新] {merge_title[:40]}")
-            else:
-                # 找不到就新建
-                create_wiki_entry(title, content, tags)
-                print(f"  [新建(fallback)] {title[:40]}")
-        elif action == "create":
-            create_wiki_entry(title, content, tags)
-            print(f"  [新建] {title[:40]}")
-
-        time.sleep(0.5)  # Notion API 限速
-
+    # 记录指标
+    record_last_run("layer2_wiki")
+    record_metrics(
+        "layer2_wiki",
+        new_chunks_processed=len(chunks),
+        wiki_entries_written=len(operations),
+        run_duration_seconds=round(time.time() - start_time, 1),
+    )
     print("[完成] Wiki 更新结束")
 
 
