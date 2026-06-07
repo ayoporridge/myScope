@@ -23,7 +23,12 @@ except ImportError:
 
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).parent.parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env", override=True)
+
+# 强制清除所有代理，确保飞书 Webhook 直连
+for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
+          "ALL_PROXY", "all_proxy", "ALL_PROXY_ENV", "no_proxy", "NO_PROXY"):
+    os.environ.pop(k, None)
 
 LOGS_DIR = Path(__file__).parent.parent / "logs"
 LAST_RUN_FILE = LOGS_DIR / "last_run.json"
@@ -49,10 +54,11 @@ LIVENESS_THRESHOLD_HOURS = 25
 # ── 飞书告警推送 ─────────────────────────────────────────────
 def send_feishu_alert(message: str):
     """推送飞书告警。优先 Webhook，备选 lark-cli。"""
-    # 方式一：Webhook（推荐）
-    if FEISHU_WEBHOOK_URL and http_requests:
+    # 方式一：curl 子进程（最可靠，绕过 Python SSL 兼容性问题）
+    if FEISHU_WEBHOOK_URL:
         try:
-            payload = {
+            import shlex
+            card = {
                 "msg_type": "interactive",
                 "card": {
                     "header": {
@@ -64,12 +70,18 @@ def send_feishu_alert(message: str):
                     ],
                 }
             }
-            resp = http_requests.post(FEISHU_WEBHOOK_URL, json=payload, timeout=10)
-            if resp.status_code == 200 and resp.json().get("code") == 0:
+            result = subprocess.run(
+                ["curl", "-s", "-X", "POST", FEISHU_WEBHOOK_URL,
+                 "-H", "Content-Type: application/json",
+                 "-d", json.dumps(card, ensure_ascii=False),
+                 "--connect-timeout", "10", "--max-time", "20"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and '"code":0' in result.stdout:
                 print("  [飞书 Webhook] 告警已推送")
                 return
             else:
-                print(f"  [飞书 Webhook] 响应异常: {resp.text[:200]}")
+                print(f"  [飞书 Webhook] 响应异常: {result.stdout[:200]}")
         except Exception as e:
             print(f"  [飞书 Webhook] 推送异常: {e}")
 

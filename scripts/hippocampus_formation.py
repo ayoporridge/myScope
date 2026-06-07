@@ -210,7 +210,11 @@ def _parse_hermes_jsonl(path: Path, last_line: int) -> tuple[list[dict], int]:
 
 def collect_hermes_messages(state: dict, new_state: dict, cutoff: datetime) -> list[dict]:
     all_messages = []
-    sessions_dir = Path.home() / ".hermes" / "sessions"
+    # Hermes Agent 会话目录（新版本在 hermes-agent 子目录下）
+    sessions_dir = Path.home() / ".hermes" / "hermes-agent" / "sessions"
+    if not sessions_dir.exists():
+        # fallback 到旧路径
+        sessions_dir = Path.home() / ".hermes" / "sessions"
     if not sessions_dir.exists():
         return all_messages
     for jsonl_file in sessions_dir.glob("*.jsonl"):
