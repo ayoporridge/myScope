@@ -2,20 +2,20 @@
 """
 layer2_wiki.py
 第二层：结构记忆 (LLM Wiki)
-
 输入：
   - Layer 1 memory_chunks（你知道的：事实碎片）
   - Layer 3 hubble_radius（你可能知道的：关注源中的相关内容）
+  - 海马体 Anda 图谱（你讨论过的：对话记忆中的决策/偏好/思考）
 
 输出：
   - wiki_entries（你应该知道的：结构化知识条目）
 
-设计意图：Layer 2 是跨层综合器。它不只总结你已经知道的事实，
-还会从哈勃半径里拉取与当前主题相关的内容，把「你可能知道但未消化的」
+设计意图：Layer 2 是跨层综合器。它以第一层切片为线索，
+从哈勃半径拉取相关内容，再从海马体召回相关对话记忆，
+把「你可能知道但未消化的」和「你讨论过但未沉淀的」
 变成「你应该知道的」结构化知识。
 
 每天凌晨 5:30 运行（第一层跑完后）
-运行位置：Mac mini（只读 Meilisearch API，不依赖本地数据）
 """
 
 import os
@@ -35,6 +35,15 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+
+# Anda 海马体
+ANDA_BASE_URL    = os.environ.get("ANDA_BASE_URL", "https://hippocampus.arjo.us.ci")
+ANDA_SPACE_ID    = os.environ.get("ANDA_SPACE_ID", "hermes_main")
+ANDA_SPACE_TOKEN = os.environ.get("ANDA_SPACE_TOKEN", "")
+ANDA_HEADERS = {
+    "Authorization": f"Bearer {ANDA_SPACE_TOKEN}",
+    "Content-Type": "application/json",
+}
 
 HEADERS = {
     "Authorization": f"Bearer {MEMORY_TOKEN}",
@@ -132,6 +141,32 @@ def search_hubble_radius(topics: list[str]) -> list[dict]:
     return all_results[:15]
 
 
+# ── 从海马体召回相关对话记忆（Anda）────────────────────────
+def recall_hippocampus(topics: list[str]) -> str:
+    """用今日主题关键词向 Anda 海马体召回相关对话记忆，返回 Markdown 文本。"""
+    if not topics or not ANDA_SPACE_TOKEN:
+        return ""
+
+    recall_url = f"{ANDA_BASE_URL}/v1/{ANDA_SPACE_ID}/recall"
+    query = "、".join(topics)
+    payload = {
+        "query": f"用户最近关于 {query} 的对话、决策、偏好和思考",
+        "context": {"counterparty": "xz"},
+        "top_k": 15,
+    }
+    try:
+        resp = requests.post(recall_url, headers=ANDA_HEADERS, json=payload, timeout=60)
+        resp.raise_for_status()
+        data = resp.json()
+        content = data.get("result", {}).get("content", "")
+        if content:
+            print(f"  海马体召回: {len(content)} 字")
+        return content
+    except Exception as e:
+        print(f"  [海马体召回失败] {e}")
+        return ""
+
+
 # ── 获取已有 Wiki 条目 ───────────────────────────────────────
 def get_existing_wiki_titles() -> list[str]:
     """获取现有 wiki_entries 的标题列表"""
@@ -151,10 +186,13 @@ def get_existing_wiki_titles() -> list[str]:
 
 # ── LLM Wiki 归纳（跨层综合）───────────────────────────────
 WIKI_PROMPT = """\
-你是一个个人知识库维护助手。你的任务是把用户最近的事实碎片和信息视野中的相关内容，归纳成结构化的 Wiki 条目。
+你是一个个人知识库维护助手。你的任务是把用户最近的事实碎片、对话记忆和信息视野中的相关内容，归纳成结构化的 Wiki 条目。
 
 【今日新增碎片】（用户亲身经历/思考/记录的事实）
 {chunks}
+
+【海马体对话记忆】（用户近期与 AI 的对话中提取的决策、偏好、思考）
+{hippocampus_context}
 
 【哈勃半径相关内容】（用户关注源中与今日主题相关的文章/资讯，用户未必读过）
 {hubble_context}
@@ -167,10 +205,11 @@ WIKI_PROMPT = """\
 - "content": 结构化内容（300字以内，散文或要点式）
 - "tags": 标签列表（3-6个）
 - "action": "create"（全新主题）或 "update"（与已有条目相关）
-- "sources": 来源说明（如 "个人经验" 或 "个人经验+哈勃半径"）
+- "sources": 来源说明（如 "个人经验" 或 "对话记忆+哈勃半径" 等）
 
 原则：
-- 以用户的事实碎片为主线，哈勃半径内容作为补充和印证
+- 以用户的事实碎片和对话记忆为主线，哈勃半径内容作为补充和印证
+- 如果海马体里有用户近期的决策或偏好变化，优先纳入 Wiki
 - 如果哈勃半径里有与用户当前关注高度相关的洞见，可以主动纳入 Wiki
 - 不要照搬外部文章内容，只提炼与用户相关的部分
 - 相关度高的碎片合并进同一条目
@@ -179,7 +218,7 @@ WIKI_PROMPT = """\
 """
 
 
-def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: list[str]) -> list[dict]:
+def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: list[str], hippocampus_text: str = "") -> list[dict]:
     """用 LLM 跨层归纳 Wiki 条目"""
     chunks_text = "\n".join(
         f"- {c.get('content', c.get('text', ''))}"
@@ -198,6 +237,10 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
     else:
         hubble_text = "（今日无相关内容）"
 
+    # 海马体对话记忆
+    if not hippocampus_text:
+        hippocampus_text = "（暂无相关对话记忆）"
+
     titles_text = "\n".join(f"- {t}" for t in existing_titles[:100]) or "（暂无）"
 
     try:
@@ -207,6 +250,7 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
                 "role": "user",
                 "content": WIKI_PROMPT.format(
                     chunks=chunks_text,
+                    hippocampus_context=hippocampus_text,
                     hubble_context=hubble_text,
                     existing_titles=titles_text,
                 )
@@ -281,19 +325,21 @@ def main():
         return
     print(f"  发现 {len(chunks)} 条 Layer 1 新切片")
 
-    # Step 2: 提取今日主题，搜索哈勃半径
+    # Step 2: 提取今日主题，搜索哈勃半径 + 海马体
     topics = extract_topics(chunks)
     print(f"  今日主题关键词: {topics}")
 
     hubble_results = search_hubble_radius(topics)
     print(f"  哈勃半径匹配: {len(hubble_results)} 条相关内容")
 
+    hippocampus_text = recall_hippocampus(topics)
+
     # Step 3: 获取已有 Wiki
     existing_titles = get_existing_wiki_titles()
     print(f"  现有 Wiki 条目：{len(existing_titles)} 条")
 
-    # Step 4: LLM 跨层归纳
-    operations = plan_wiki(chunks, hubble_results, existing_titles)
+    # Step 4: LLM 跨层归纳（第一层 + 第三层 + 海马体）
+    operations = plan_wiki(chunks, hubble_results, existing_titles, hippocampus_text)
     print(f"  LLM 规划了 {len(operations)} 个 Wiki 条目")
 
     # Step 5: 写入
