@@ -27,8 +27,8 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/ayoporridge/hermes-setup.git
-cd hermes-setup
+git clone https://github.com/ayoporridge/myScope.git
+cd myScope
 ```
 
 ### 2. 一键安装
@@ -229,7 +229,7 @@ Tailscale 免费版支持 100 台设备，不需要暴露任何端口。
 ### 手动触发同步
 
 ```bash
-cd ~/hermes-setup
+cd ~/myScope
 
 # 第三层：FreshRSS → Meilisearch
 python3 scripts/layer3_index.py
@@ -247,16 +247,16 @@ python3 scripts/hippocampus_formation.py
 ### 查看定时任务日志
 
 ```bash
-tail -f ~/hermes-setup/logs/layer3.log
-tail -f ~/hermes-setup/logs/layer1.log
-tail -f ~/hermes-setup/logs/layer2.log
-tail -f ~/hermes-setup/logs/hippocampus_formation.log
+tail -f ~/myScope/logs/layer3.log
+tail -f ~/myScope/logs/layer1.log
+tail -f ~/myScope/logs/layer2.log
+tail -f ~/myScope/logs/hippocampus_formation.log
 ```
 
 ### 更新代码
 
 ```bash
-cd ~/hermes-setup
+cd ~/myScope
 git pull
 # 如果有 Python 依赖变化
 pip3 install -r requirements.txt -q
@@ -337,7 +337,7 @@ curl "https://你的worker.workers.dev/search?q=AI记忆层&limit=5" \
 ## 文件结构
 
 ```
-hermes-setup/
+myScope/
 ├── .env.example          # 环境变量模板
 ├── .env                  # 本地配置（不提交 git）
 ├── docker-compose.yml    # FreshRSS + Meilisearch + RSSHub

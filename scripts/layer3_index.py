@@ -21,48 +21,27 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 FRESHRSS_URL      = os.environ["FRESHRSS_URL"]
 FRESHRSS_USERNAME = os.environ["FRESHRSS_USERNAME"]
 FRESHRSS_API_PASS = os.environ["FRESHRSS_API_PASSWORD"]
-MEILI_URL         = "http://localhost:7700"
-MEILI_KEY         = os.environ["MEILI_MASTER_KEY"]
-INDEX_NAME        = "hubble"
+MEMORY_URL        = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
+MEMORY_TOKEN      = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+INDEX_NAME        = "hubble_radius"
 
-# ── Meilisearch 客户端 ────────────────────────────────────
-def meili_headers():
-    return {"Authorization": f"Bearer {MEILI_KEY}", "Content-Type": "application/json"}
-
-def ensure_index():
-    """确保索引存在，设置可搜索字段"""
-    r = requests.get(f"{MEILI_URL}/indexes/{INDEX_NAME}", headers=meili_headers())
-    if r.status_code == 404:
-        requests.post(
-            f"{MEILI_URL}/indexes",
-            headers=meili_headers(),
-            json={"uid": INDEX_NAME, "primaryKey": "id"}
-        )
-        # 配置可搜索字段和排序
-        requests.patch(
-            f"{MEILI_URL}/indexes/{INDEX_NAME}/settings",
-            headers=meili_headers(),
-            json={
-                "searchableAttributes": ["title", "content", "feed_title", "author"],
-                "filterableAttributes": ["feed_category", "feed_title", "published_at"],
-                "sortableAttributes": ["published_at"],
-                "rankingRules": [
-                    "words", "typo", "proximity", "attribute", "sort", "exactness"
-                ]
-            }
-        )
-    print(f"[Meilisearch] 索引 '{INDEX_NAME}' 就绪")
-
+# ── memory-api 写入 ───────────────────────────────────────
 def add_documents(docs):
     if not docs:
         return
+    headers = {
+        "Authorization": f"Bearer {MEMORY_TOKEN}",
+        "Content-Type": "application/json",
+    }
     r = requests.post(
-        f"{MEILI_URL}/indexes/{INDEX_NAME}/documents",
-        headers=meili_headers(),
-        json=docs
+        f"{MEMORY_URL}/ingest",
+        headers=headers,
+        json={"index": INDEX_NAME, "documents": docs},
+        timeout=30,
     )
-    task_uid = r.json().get("taskUid")
-    print(f"[Meilisearch] 写入 {len(docs)} 条，taskUid={task_uid}")
+    r.raise_for_status()
+    count = r.json().get("count", len(docs))
+    print(f"[memory-api] 写入 {count} 条")
 
 
 # ── FreshRSS GReader API ──────────────────────────────────
@@ -115,15 +94,10 @@ def item_to_doc(item):
     published = item.get("published", 0)
 
     return {
-        "id": doc_id,
-        "title": item.get("title", ""),
-        "content": content,
-        "url": url,
-        "author": item.get("author", ""),
-        "feed_title": item.get("origin", {}).get("title", ""),
-        "feed_category": "",   # FreshRSS 分类需额外 API，此处留空
-        "published_at": published,
-        "published_date": datetime.fromtimestamp(published).strftime("%Y-%m-%d") if published else "",
+        "id":     doc_id,
+        "text":   f"{item.get('title', '')} {content}".strip(),
+        "source": item.get("origin", {}).get("title", "rss"),
+        "date":   datetime.fromtimestamp(published).strftime("%Y-%m-%d") if published else "",
     }
 
 
@@ -143,8 +117,6 @@ def save_state(state):
 def main():
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始同步 FreshRSS → Meilisearch")
 
-    ensure_index()
-
     auth = freshrss_auth()
     state = load_state()
     continuation = state.get("freshrss_continuation")
@@ -160,7 +132,7 @@ def main():
 
         for item in items:
             doc = item_to_doc(item)
-            if doc["title"] or doc["content"]:
+            if doc["text"]:
                 batch.append(doc)
 
         # 每 200 条写一次
