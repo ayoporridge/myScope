@@ -2,6 +2,8 @@
 """
 dayflow_sync.py
 Dayflow observations → Meilisearch (memory_chunks) 增量同步
+运行位置：MacBook（Dayflow 只装在 MacBook）
+触发方式：开机自动运行（launchd RunAtLoad）
 
 运行方式：
   python3 dayflow_sync.py          # 增量（只同步新增）

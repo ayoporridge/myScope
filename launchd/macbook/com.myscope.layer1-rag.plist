@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MacBook 开机任务：第一层 RAG 切片
+  微信收藏 + 文件传输助手 + Obsidian → Xiaomi mimo 切片 → Meilisearch memory_chunks
+  登录时运行（RunAtLoad），脚本内部通过状态文件做增量
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.layer1-rag</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>MYSCOPE_DIR/scripts/layer1_rag.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/layer1_rag.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/layer1_rag_err.log</string>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

@@ -3,7 +3,8 @@
 layer3_index.py
 第三层：哈勃半径
 FreshRSS 新内容 → Meilisearch 索引
-每天凌晨定时运行，也可手动执行
+运行位置：Mac mini（FreshRSS Docker 在 Mac mini 上）
+触发方式：每天 02:30 定时运行
 """
 
 import os

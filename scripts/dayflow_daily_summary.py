@@ -2,12 +2,13 @@
 """
 dayflow_daily_summary.py
 Dayflow 日摘要 → Anda Hippocampus Formation
+运行位置：MacBook（Dayflow 只装在 MacBook）
+触发方式：开机自动运行（launchd RunAtLoad），在 dayflow_sync 之后
 
-每天凌晨 4:00 运行（在 dayflow_sync.py 之后）：
+功能：
   1. 从 Dayflow SQLite 读取昨天全天的 observations
   2. 按时间顺序拼成一段活动叙述
   3. 封装成 user+assistant 消息对，提交 Formation API
-     （让 Hippocampus 知道你昨天做了什么）
 
 运行方式：
   python3 dayflow_daily_summary.py          # 昨天

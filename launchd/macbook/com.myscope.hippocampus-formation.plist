@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MacBook 开机任务：海马体 Formation（MacBook 侧）
+  Claude Code / Clacky 会话日志 → 过滤 → Anda Formation API
+  登录时运行（RunAtLoad）
+  注：Mac mini 侧的 Codex / Hermes 会话由 Mac mini 定时任务处理
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.hippocampus-formation</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>MYSCOPE_DIR/scripts/hippocampus_formation.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/hippocampus_formation.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/hippocampus_formation_err.log</string>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

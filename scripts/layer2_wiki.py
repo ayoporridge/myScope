@@ -15,6 +15,7 @@ layer2_wiki.py
 变成「你应该知道的」结构化知识。
 
 每天凌晨 5:30 运行（第一层跑完后）
+运行位置：Mac mini（只读 Meilisearch API，不依赖本地数据）
 """
 
 import os

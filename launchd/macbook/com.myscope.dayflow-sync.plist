@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MacBook 开机任务：Dayflow 屏幕活动同步
+  Dayflow SQLite → Meilisearch memory_chunks
+  登录时运行（RunAtLoad），脚本内部通过状态文件做增量
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.dayflow-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>MYSCOPE_DIR/scripts/dayflow_sync.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/dayflow_sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/dayflow_sync_err.log</string>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

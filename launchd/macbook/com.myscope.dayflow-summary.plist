@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MacBook 开机任务：Dayflow 日摘要 → 海马体
+  Dayflow SQLite → 日活动叙述 → Anda Formation API
+  登录时运行（RunAtLoad），在 dayflow-sync 之后
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.dayflow-summary</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>MYSCOPE_DIR/scripts/dayflow_daily_summary.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/dayflow_summary.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/dayflow_summary_err.log</string>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

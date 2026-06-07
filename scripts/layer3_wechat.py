@@ -3,7 +3,8 @@
 layer3_wechat.py
 第三层补充：公众号文章 → Meilisearch hubble_radius
 通过 opencli wx biz-articles 从本地微信缓存读取文章
-每天凌晨 2:30 运行（RSS 同步之后）
+运行位置：MacBook（需要本地微信数据）
+触发方式：开机自动运行（launchd RunAtLoad）
 """
 
 import os

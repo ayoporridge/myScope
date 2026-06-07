@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  MacBook 开机任务：第三层公众号文章索引
+  opencli wx biz-articles → Meilisearch hubble_radius
+  登录时运行（RunAtLoad），脚本内部通过状态文件做增量
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.layer3-wechat</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>MYSCOPE_DIR/scripts/layer3_wechat.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/layer3_wechat.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/layer3_wechat_err.log</string>
+  <key>KeepAlive</key>
+  <false/>
+</dict>
+</plist>

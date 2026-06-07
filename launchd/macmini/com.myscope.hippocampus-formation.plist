@@ -2,38 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  第二层：LLM Wiki 更新
-  Notion RAG 切片 → DeepSeek 归纳 → Notion Wiki DB
-  每天 05:30 运行（layer1 跑完后）
+  Mac mini 定时任务：海马体 Formation
+  Codex / Hermes / Clacky 会话日志 → 过滤 → Anda Formation API
+  每天 06:00 运行
 -->
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>com.hermes.layer2-wiki</string>
-
+  <string>com.myscope.hippocampus-formation</string>
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/env</string>
     <string>python3</string>
-    <string>HERMES_DIR/scripts/layer2_wiki.py</string>
+    <string>MYSCOPE_DIR/scripts/hippocampus_formation.py</string>
   </array>
-
   <key>WorkingDirectory</key>
-  <string>HERMES_DIR</string>
-
+  <string>MYSCOPE_DIR</string>
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>5</integer>
+    <integer>6</integer>
     <key>Minute</key>
-    <integer>30</integer>
+    <integer>0</integer>
   </dict>
-
   <key>StandardOutPath</key>
-  <string>HERMES_DIR/logs/layer2.log</string>
+  <string>MYSCOPE_DIR/logs/hippocampus_formation.log</string>
   <key>StandardErrorPath</key>
-  <string>HERMES_DIR/logs/layer2_err.log</string>
-
+  <string>MYSCOPE_DIR/logs/hippocampus_formation_err.log</string>
   <key>RunAtLoad</key>
   <false/>
   <key>KeepAlive</key>
