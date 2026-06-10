@@ -10,6 +10,7 @@ import os
 import re
 import json
 import time
+import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 import requests
@@ -128,7 +129,7 @@ def collect_claude_messages(state: dict, new_state: dict, cutoff: datetime) -> l
     return all_messages
 
 
-# ── 来源二：Codex（~/.codex/archived_sessions/*.jsonl） ────
+# ── 来源二：Codex（~/.codex/sessions/*.jsonl） ────
 def _parse_codex_jsonl(path: Path, last_line: int) -> tuple[list[dict], int]:
     """解析 Codex session 文件，只提取 response_item 里的 user/assistant 消息。"""
     messages = []
@@ -167,10 +168,10 @@ def _parse_codex_jsonl(path: Path, last_line: int) -> tuple[list[dict], int]:
 
 def collect_codex_messages(state: dict, new_state: dict, cutoff: datetime) -> list[dict]:
     all_messages = []
-    sessions_dir = Path.home() / ".codex" / "archived_sessions"
+    sessions_dir = Path.home() / ".codex" / "sessions"
     if not sessions_dir.exists():
         return all_messages
-    for jsonl_file in sessions_dir.glob("*.jsonl"):
+    for jsonl_file in sessions_dir.rglob("*.jsonl"):
         if datetime.fromtimestamp(jsonl_file.stat().st_mtime) < cutoff:
             continue
         key = str(jsonl_file)
@@ -310,6 +311,37 @@ def collect_clacky_messages(state: dict, new_state: dict, cutoff: datetime) -> l
     return all_messages
 
 
+# ── 来源五：Hermes SQLite（~/.hermes/hermes-agent/state.db）───
+HERMES_DB_PATH = Path.home() / ".hermes" / "hermes-agent" / "state.db"
+
+
+def collect_hermes_from_sqlite(cutoff: datetime) -> list[dict]:
+    """从 Hermes SQLite 数据库读取最近的 user/assistant 消息。"""
+    messages = []
+    if not HERMES_DB_PATH.exists():
+        return messages
+    cutoff_ts = cutoff.timestamp()
+    try:
+        conn = sqlite3.connect(str(HERMES_DB_PATH))
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT role, content FROM messages "
+            "WHERE timestamp > ? AND role IN ('user', 'assistant') "
+            "ORDER BY timestamp",
+            (cutoff_ts,),
+        )
+        for role, content in cur.fetchall():
+            text = str(content).strip()
+            if text:
+                messages.append({"role": role, "content": text[:1000]})
+        conn.close()
+        if messages:
+            print(f"  [hermes-sqlite] +{len(messages)} 条")
+    except Exception as e:
+        print(f"  [hermes-sqlite 读取失败] {e}")
+    return messages
+
+
 # ── 提交到 Anda Formation API ─────────────────────────────
 def post_formation(messages: list[dict]) -> bool:
     payload = {
@@ -343,6 +375,10 @@ def main():
     all_messages += collect_codex_messages(state, new_state, cutoff)
     all_messages += collect_hermes_messages(state, new_state, cutoff)
     all_messages += collect_clacky_messages(state, new_state, cutoff)
+
+    # 如果 JSONL 来源全部为空，尝试从 SQLite 读取（Hermes 已迁移到 SQLite）
+    if not all_messages:
+        all_messages += collect_hermes_from_sqlite(cutoff)
 
     raw_count = len(all_messages)
     print(f"  收集到 {raw_count} 条原始消息")
