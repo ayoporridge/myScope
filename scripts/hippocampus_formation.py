@@ -312,33 +312,40 @@ def collect_clacky_messages(state: dict, new_state: dict, cutoff: datetime) -> l
 
 
 # ── 来源五：Hermes SQLite（~/.hermes/hermes-agent/state.db）───
-HERMES_DB_PATH = Path.home() / ".hermes" / "hermes-agent" / "state.db"
+# Hermes SQLite 路径：新版 ~/.hermes/state.db，旧版 ~/.hermes/hermes-agent/state.db
+_HERMES_DB_CANDIDATES = [
+    Path.home() / ".hermes" / "state.db",
+    Path.home() / ".hermes" / "hermes-agent" / "state.db",
+]
 
 
 def collect_hermes_from_sqlite(cutoff: datetime) -> list[dict]:
     """从 Hermes SQLite 数据库读取最近的 user/assistant 消息。"""
     messages = []
-    if not HERMES_DB_PATH.exists():
-        return messages
     cutoff_ts = cutoff.timestamp()
-    try:
-        conn = sqlite3.connect(str(HERMES_DB_PATH))
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT role, content FROM messages "
-            "WHERE timestamp > ? AND role IN ('user', 'assistant') "
-            "ORDER BY timestamp",
-            (cutoff_ts,),
-        )
-        for role, content in cur.fetchall():
-            text = str(content).strip()
-            if text:
-                messages.append({"role": role, "content": text[:1000]})
-        conn.close()
+    for db_path in _HERMES_DB_CANDIDATES:
+        if not db_path.exists():
+            continue
+        try:
+            conn = sqlite3.connect(str(db_path))
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT role, content FROM messages "
+                "WHERE timestamp > ? AND role IN ('user', 'assistant') "
+                "ORDER BY timestamp",
+                (cutoff_ts,),
+            )
+            for role, content in cur.fetchall():
+                text = str(content).strip()
+                if text:
+                    messages.append({"role": role, "content": text[:1000]})
+            conn.close()
+            if messages:
+                print(f"  [hermes-sqlite:{db_path.name}] +{len(messages)} 条")
+        except Exception as e:
+            print(f"  [hermes-sqlite {db_path.name} 读取失败] {e}")
         if messages:
-            print(f"  [hermes-sqlite] +{len(messages)} 条")
-    except Exception as e:
-        print(f"  [hermes-sqlite 读取失败] {e}")
+            break  # 第一个有数据的库就够了，避免跨库重复
     return messages
 
 

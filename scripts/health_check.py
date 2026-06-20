@@ -34,6 +34,9 @@ LOGS_DIR = Path(__file__).parent.parent / "logs"
 LAST_RUN_FILE = LOGS_DIR / "last_run.json"
 METRICS_FILE = LOGS_DIR / "metrics.jsonl"
 
+# 跨机器共享指标目录（git 追踪）
+METRICS_SHARED_DIR = Path(__file__).parent.parent / "data" / "metrics"
+
 # 飞书告警配置
 FEISHU_WEBHOOK_URL = os.environ.get("FEISHU_WEBHOOK_URL", "")
 FEISHU_ALERT_USER_ID = os.environ.get("FEISHU_ALERT_USER_ID", "")
@@ -142,72 +145,105 @@ def check_liveness() -> list[str]:
 
 
 # ── 层级 2：质量性检查 ────────────────────────────────────────
+def _load_metrics(days: int = 3) -> list[dict]:
+    """从 data/metrics/*.jsonl（所有机器）和 logs/metrics.jsonl（本地）加载近期指标。"""
+    cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    seen_keys = set()  # (hostname, date, script, timestamp) 去重
+    entries = []
+
+    def _read_jsonl(path: Path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                        if entry.get("date", "") < cutoff:
+                            continue
+                        key = (
+                            entry.get("hostname", path.stem),
+                            entry.get("date", ""),
+                            entry.get("script", ""),
+                            entry.get("timestamp", ""),
+                        )
+                        if key not in seen_keys:
+                            seen_keys.add(key)
+                            entries.append(entry)
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            pass
+
+    # 1. 读所有机器的共享指标
+    if METRICS_SHARED_DIR.exists():
+        for f in METRICS_SHARED_DIR.glob("*.jsonl"):
+            _read_jsonl(f)
+
+    # 2. 读本机本地指标（兼容过渡期，去重后不会重复）
+    _read_jsonl(METRICS_FILE)
+
+    return entries
+
+
 def check_quality() -> list[str]:
-    """从 metrics.jsonl 检查昨日质量指标"""
+    """从多机器 metrics 检查近期质量指标"""
     alerts = []
 
-    if not METRICS_FILE.exists():
-        return []  # 刚部署没数据，不告警
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    three_days_ago = (datetime.now() - timedelta(days=3)).strftime("%Y-%m-%d")
-
-    recent_metrics = []
-    try:
-        with open(METRICS_FILE, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    entry = json.loads(line)
-                    if entry.get("date", "") >= three_days_ago:
-                        recent_metrics.append(entry)
-                except json.JSONDecodeError:
-                    continue
-    except OSError:
-        return ["⚠️ `metrics.jsonl` 读取失败"]
-
+    recent_metrics = _load_metrics(days=3)
     if not recent_metrics:
         return []
 
-    # 检查 1：hippocampus formation 有效消息数 < 5
+    today = datetime.now().strftime("%Y-%m-%d")
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    # 检查 1：hippocampus formation 有效消息数（跨机器聚合）
     formation_metrics = [
         m for m in recent_metrics
         if m.get("script") == "hippocampus_formation"
         and m.get("date") in (today, yesterday)
     ]
     if formation_metrics:
-        latest = formation_metrics[-1]
-        meaningful = latest.get("meaningful_messages", 0)
-        if meaningful < 5:
-            alerts.append(
-                f"🟡 `hippocampus_formation` 有效消息仅 {meaningful} 条（阈值 5）"
+        # 按机器汇总当天最新一条
+        by_host = {}
+        for m in formation_metrics:
+            host = m.get("hostname", "unknown")
+            by_host[host] = m  # 同机器同天多条，取最后一条
+        total_meaningful = sum(
+            m.get("meaningful_messages", 0) for m in by_host.values()
+        )
+        if total_meaningful < 5:
+            detail = "、".join(
+                f"{h}={m.get('meaningful_messages', 0)}"
+                for h, m in by_host.items()
             )
-        # 检查提交是否成功
-        batches_success = latest.get("batches_success", 0)
-        batches_total = latest.get("batches_total", 0)
-        if batches_total > 0 and batches_success < batches_total:
             alerts.append(
-                f"🔴 `hippocampus_formation` 提交失败（{batches_success}/{batches_total} 批成功）"
+                f"🟡 `hippocampus_formation` 有效消息仅 {total_meaningful} 条（阈值 5）[{detail}]"
             )
+        # 检查各机器提交是否成功
+        for host, m in by_host.items():
+            batches_success = m.get("batches_success", 0)
+            batches_total = m.get("batches_total", 0)
+            if batches_total > 0 and batches_success < batches_total:
+                alerts.append(
+                    f"🔴 `{host}` hippocampus_formation 提交失败（{batches_success}/{batches_total} 批成功）"
+                )
 
-    # 检查 2：memory_chunks 新增 < 3 条
+    # 检查 2：memory_chunks 新增（跨机器聚合）
     rag_metrics = [
         m for m in recent_metrics
         if m.get("script") == "layer1_rag"
         and m.get("date") in (today, yesterday)
     ]
     if rag_metrics:
-        latest = rag_metrics[-1]
-        chunks = latest.get("chunks_produced", 0)
-        if chunks < 3:
+        total_chunks = sum(m.get("chunks_produced", 0) for m in rag_metrics)
+        if total_chunks < 3:
             alerts.append(
-                f"🟡 `layer1_rag` 新增切片仅 {chunks} 条（阈值 3）"
+                f"🟡 `layer1_rag` 新增切片仅 {total_chunks} 条（阈值 3）"
             )
 
-    # 检查 3：wiki_entries 连续 3 天无新增
+    # 检查 3：wiki_entries 连续 3 天无新增（跨机器聚合）
     wiki_metrics = [
         m for m in recent_metrics
         if m.get("script") == "layer2_wiki"
