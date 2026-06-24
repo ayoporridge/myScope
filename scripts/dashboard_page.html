@@ -4,70 +4,636 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MyScope 仪表盘</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
+/* ══════════════════════════════════════════════
+   Vercel Geist Design System — Light Theme
+   ══════════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg-page: #ffffff;
+  --bg-page-alt: #fafafa;
+  --bg-card: #ffffff;
+  --bg-hover: #f2f2f2;
+  --bg-active: #ebebeb;
+  
+  /* Text */
+  --text-primary: #171717;
+  --text-secondary: #4d4d4d;
+  --text-tertiary: #8f8f8f;
+  --text-muted: #a8a8a8;
+  
+  /* Accent — Vercel Blue */
+  --accent: #006bff;
+  --accent-hover: #0059ec;
+  --accent-light: #f0f7ff;
+  
+  /* Status */
+  --status-green: #28a948;
+  --status-green-light: #ecfdec;
+  --status-amber: #ffae00;
+  --status-amber-light: #fff6de;
+  --status-red: #fc0035;
+  --status-red-light: #ffeeef;
+  
+  /* Charts */
+  --chart-blue: #006bff;
+  --chart-purple: #a000f8;
+  --chart-teal: #00ac96;
+  --chart-amber: #ffae00;
+  --chart-pink: #f22782;
+  
+  /* Borders */
+  --border: rgba(0,0,0,0.1);
+  --border-light: rgba(0,0,0,0.06);
+  
+  /* Radius */
+  --radius: 8px;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1419; color: #e7e9ea; padding: 20px; }
-h1 { font-size: 1.4rem; margin-bottom: 6px; color: #fff; }
-.subtitle { color: #71767b; font-size: 0.85rem; margin-bottom: 20px; }
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-.card { background: #1a1f25; border: 1px solid #2f3336; border-radius: 12px; padding: 16px; }
-.card h2 { font-size: 0.9rem; color: #71767b; margin-bottom: 12px; letter-spacing: 0.5px; }
-.status-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-.status-item { background: #0f1419; border-radius: 8px; padding: 10px 14px; flex: 1; min-width: 140px; }
-.status-item .name { font-size: 0.75rem; color: #71767b; margin-bottom: 4px; }
-.status-item .time { font-size: 0.85rem; }
-.status-item .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.dot-green { background: #00ba7c; }
-.dot-yellow { background: #f7b955; }
-.dot-red { background: #f4212e; }
-.index-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
-.index-item { text-align: center; padding: 12px 8px; background: #0f1419; border-radius: 8px; }
-.index-item .num { font-size: 1.5rem; font-weight: 700; color: #1d9bf0; }
-.index-item .label { font-size: 0.7rem; color: #71767b; margin-top: 4px; }
-.flow-container { position: relative; width: 100%; min-height: 200px; }
-.flow-container svg { width: 100%; height: 200px; }
-.flow-node { fill: #1a1f25; stroke: #2f3336; stroke-width: 1.5; rx: 8; }
-.flow-arrow { stroke: #1d9bf0; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
-.flow-label { fill: #e7e9ea; font-size: 11px; text-anchor: middle; }
-.flow-num { fill: #1d9bf0; font-size: 10px; text-anchor: middle; font-weight: bold; }
-canvas { max-height: 220px; }
-.refresh-info { text-align: right; font-size: 0.7rem; color: #536471; margin-top: 8px; }
-/* Modal */
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: flex-start; padding: 40px 20px; overflow-y: auto; }
-.modal-overlay.active { display: flex; }
-.modal { background: #1a1f25; border: 1px solid #2f3336; border-radius: 12px; width: 100%; max-width: 700px; max-height: 80vh; overflow-y: auto; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #2f3336; position: sticky; top: 0; background: #1a1f25; z-index: 1; }
-.modal-header h3 { font-size: 1rem; }
-.modal-close { background: none; border: none; color: #71767b; font-size: 1.5rem; cursor: pointer; }
-.modal-close:hover { color: #fff; }
-.modal-search { padding: 12px 20px; border-bottom: 1px solid #2f3336; }
-.modal-search input { width: 100%; background: #0f1419; border: 1px solid #2f3336; border-radius: 8px; padding: 8px 12px; color: #e7e9ea; font-size: 0.85rem; outline: none; }
-.modal-search input:focus { border-color: #1d9bf0; }
-.modal-body { padding: 12px 20px; }
-.browse-item { padding: 12px 0; border-bottom: 1px solid #2f3336; }
-.browse-item:last-child { border-bottom: none; }
-.browse-item .title { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #1d9bf0; }
-.browse-item .content { font-size: 0.8rem; color: #ccc; line-height: 1.5; }
-.browse-item .meta { font-size: 0.7rem; color: #536471; margin-top: 4px; }
-.clickable { cursor: pointer; transition: transform 0.1s; }
-.clickable:hover { transform: scale(1.05); }
+
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  padding: 24px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══ Header ═══ */
+.header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0;
+  margin-bottom: 4px;
+}
+
+.header .subtitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* ═══ Grid ═══ */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ═══ Cards ═══ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.card h2 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+
+/* ═══ Status Grid ═══ */
+.status-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-item {
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.status-item .name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.status-item .time {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-green { background: var(--status-green); }
+.dot-amber { background: var(--status-amber); }
+.dot-red { background: var(--status-red); }
+
+/* ═══ Index Grid ═══ */
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.index-item {
+  text-align: center;
+  padding: 16px 8px;
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.index-item:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.index-item .num {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0;
+  margin-bottom: 2px;
+}
+
+.index-item:hover .num {
+  color: var(--accent);
+}
+
+.index-item .label {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+/* ═══ Charts ═══ */
+canvas {
+  max-height: 200px;
+}
+
+/* ═══ Flow Container ═══ */
+.flow-container {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  padding: 12px 0;
+}
+
+.flow-container svg {
+  width: 100%;
+  height: 200px;
+}
+
+.flow-node {
+  fill: var(--bg-card);
+  stroke: var(--border);
+  stroke-width: 1;
+  rx: 6;
+}
+
+.flow-node:hover {
+  fill: var(--accent-light);
+  stroke: var(--accent);
+}
+
+.flow-node-accent {
+  fill: var(--accent-light);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  rx: 6;
+}
+
+.flow-arrow {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  fill: none;
+  marker-end: url(#arrowhead);
+}
+
+.flow-arrow-accent {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: none;
+  marker-end: url(#arrowhead-accent);
+}
+
+.flow-label {
+  fill: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  text-anchor: middle;
+  font-family: 'Inter', sans-serif;
+}
+
+.flow-label-sm {
+  fill: var(--text-muted);
+  font-size: 9px;
+  font-weight: 400;
+  text-anchor: middle;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.flow-num {
+  fill: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ═══ Legend ═══ */
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.legend-line {
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-line-dashed {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed;
+}
+
+/* ═══ Refresh Info ═══ */
+.refresh-info {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+
+/* ═══ Modal ═══ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 16px;
+  overflow-y: auto;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 680px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 1;
+}
+
+.modal-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-search {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.modal-search input {
+  width: 100%;
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+}
+
+.modal-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.modal-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.modal-body {
+  padding: 12px 20px;
+}
+
+.browse-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.browse-item:last-child {
+  border-bottom: none;
+}
+
+.browse-item .title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.browse-item .content {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.browse-item .meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.browse-item .tag {
+  display: inline-block;
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.index-note {
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.index-note .note-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.index-note .note-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.index-note .note-meta,
+.chart-note {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.index-note .note-tags,
+.index-note .source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.index-note .source-heading {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 12px;
+}
+
+.index-note .source-chip,
+.index-note .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.index-note .source-name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.index-note .source-count {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.overview-card {
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.overview-card .value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.overview-card .label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.overview-card .description {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.modal-footer {
+  padding: 14px 0 4px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.load-more {
+  border: 1px solid var(--border);
+  background: var(--bg-page-alt);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.load-more:hover {
+  background: var(--bg-hover);
+}
 </style>
 </head>
 <body>
-<h1>MyScope 仪表盘</h1>
-<p class="subtitle">记忆系统运行状态与数据流动 &mdash; <span id="clock"></span></p>
+
+<div class="header">
+  <h1>MyScope Dashboard</h1>
+  <p class="subtitle">记忆系统运行状态与数据流动 · <span id="clock"></span></p>
+</div>
 
 <!-- Row 1: Status + Indexes -->
 <div class="grid">
   <div class="card">
     <h2>脚本存活状态</h2>
-    <div id="status-container" class="status-grid">加载中...</div>
+    <div id="status-container" class="status-grid">
+      <div class="status-item">
+        <div class="name">hippocampus_formation</div>
+        <div class="time"><span class="dot dot-green"></span>3 小时前</div>
+      </div>
+      <div class="status-item">
+        <div class="name">layer1_flomo</div>
+        <div class="time"><span class="dot dot-green"></span>4.5 小时前</div>
+      </div>
+      <div class="status-item">
+        <div class="name">layer2_wiki</div>
+        <div class="time"><span class="dot dot-green"></span>3.5 小时前</div>
+      </div>
+    </div>
   </div>
   <div class="card">
     <h2>数据总量</h2>
-    <div id="index-container" class="index-grid">加载中...</div>
+    <div id="index-container" class="index-grid">
+      <div class="index-item" onclick="openBrowse('memory_chunks', '事实碎片')">
+        <div class="num">8874</div>
+        <div class="label">事实碎片</div>
+      </div>
+      <div class="index-item" onclick="openBrowse('wiki_entries', 'Wiki 条目')">
+        <div class="num">216</div>
+        <div class="label">Wiki 条目</div>
+      </div>
+      <div class="index-item" onclick="openBrowse('hubble_radius', '哈勃半径')">
+        <div class="num">15230</div>
+        <div class="label">哈勃半径</div>
+      </div>
+      <div class="index-item" onclick="openBrowse('anda_concepts', '图谱概念')">
+        <div class="num">220</div>
+        <div class="label">图谱概念</div>
+      </div>
+      <div class="index-item" onclick="openBrowse('anda_propositions', '图谱命题')">
+        <div class="num">530</div>
+        <div class="label">图谱命题</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -76,78 +642,144 @@ canvas { max-height: 220px; }
   <div class="card">
     <h2>Formation 质量趋势（近 7 天）</h2>
     <canvas id="formationChart"></canvas>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--text-muted)"></div>
+        <span>原始消息</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--status-green)"></div>
+        <span>有效消息</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--status-red)"></div>
+        <span>过滤噪音</span>
+      </div>
+    </div>
+    <div class="chart-note">原始消息是采集到的 AI 对话片段；有效消息是过滤后提交给 Hippocampus 的内容；过滤噪音是被判定为状态回显、工具过程或低信息量的内容。</div>
   </div>
   <div class="card">
     <h2>每日吞吐量</h2>
     <canvas id="throughputChart"></canvas>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--chart-purple)"></div>
+        <span>第一层切片</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--status-green)"></div>
+        <span>第二层 Wiki</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: var(--chart-amber)"></div>
+        <span>第三层文章（右轴）</span>
+      </div>
+    </div>
+    <div class="chart-note">第一层切片与第二层 Wiki 用左轴柱状图；第三层文章通常数量更大，用右轴折线显示。</div>
   </div>
 </div>
 
 <!-- Row 3: Data Flow -->
-<div class="card" style="margin-bottom:20px">
+<div class="card" style="margin-bottom: 16px;">
   <h2>数据管道动线</h2>
   <div class="flow-container">
     <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
-      <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#1d9bf0"/></marker></defs>
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)"></polygon>
+        </marker>
+        <marker id="arrowhead-accent" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="var(--accent)"></polygon>
+        </marker>
+      </defs>
+      
       <!-- 数据源 -->
-      <rect class="flow-node" x="10" y="20" width="110" height="36"/>
-      <text class="flow-label" x="65" y="43">微信/Obsidian</text>
-      <rect class="flow-node" x="10" y="70" width="110" height="36"/>
-      <text class="flow-label" x="65" y="93">Flomo</text>
-      <rect class="flow-node" x="10" y="120" width="110" height="36"/>
-      <text class="flow-label" x="65" y="143">RSS/公众号</text>
-      <rect class="flow-node" x="10" y="155" width="110" height="36"/>
-      <text class="flow-label" x="65" y="178">AI 对话/Dayflow</text>
+      <rect class="flow-node" x="10" y="15" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="38">微信 / Obsidian</text>
+      
+      <rect class="flow-node" x="10" y="60" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="83">Flomo</text>
+      
+      <rect class="flow-node" x="10" y="105" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="128">RSS / 公众号</text>
+      
+      <rect class="flow-node" x="10" y="150" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="173">AI 对话 / Dayflow</text>
+      
       <!-- 第一层 -->
-      <rect class="flow-node" x="200" y="30" width="130" height="50"/>
-      <text class="flow-label" x="265" y="50">第一层：事实记忆</text>
-      <text class="flow-label" x="265" y="65" style="font-size:9px;fill:#71767b">memory_chunks</text>
-      <text class="flow-num" x="265" y="80" id="flow-l1">—</text>
+      <rect class="flow-node" x="200" y="20" width="130" height="50"></rect>
+      <text class="flow-label" x="265" y="40">第一层：事实记忆</text>
+      <text class="flow-label-sm" x="265" y="55">memory_chunks</text>
+      <text class="flow-num" x="265" y="70" id="flow-l1">8874</text>
+      
       <!-- 第三层 -->
-      <rect class="flow-node" x="200" y="110" width="130" height="50"/>
-      <text class="flow-label" x="265" y="130">第三层：哈勃半径</text>
-      <text class="flow-label" x="265" y="145" style="font-size:9px;fill:#71767b">hubble_radius</text>
-      <text class="flow-num" x="265" y="160" id="flow-l3">—</text>
+      <rect class="flow-node" x="200" y="100" width="130" height="50"></rect>
+      <text class="flow-label" x="265" y="120">第三层：哈勃半径</text>
+      <text class="flow-label-sm" x="265" y="135">hubble_radius</text>
+      <text class="flow-num" x="265" y="150" id="flow-l3">15230</text>
+      
       <!-- 第二层 -->
-      <rect class="flow-node" x="420" y="60" width="130" height="60"/>
-      <text class="flow-label" x="485" y="80">第二层：结构知识</text>
-      <text class="flow-label" x="485" y="95" style="font-size:9px;fill:#71767b">wiki_entries</text>
-      <text class="flow-num" x="485" y="113" id="flow-l2">—</text>
+      <rect class="flow-node" x="410" y="45" width="130" height="55"></rect>
+      <text class="flow-label" x="475" y="65">第二层：结构知识</text>
+      <text class="flow-label-sm" x="475" y="80">wiki_entries</text>
+      <text class="flow-num" x="475" y="98" id="flow-l2">216</text>
+      
       <!-- Anda 图谱 -->
-      <rect class="flow-node" x="420" y="145" width="130" height="45"/>
-      <text class="flow-label" x="485" y="165">Anda 知识图谱</text>
-      <text class="flow-num" x="485" y="180" id="flow-anda">—</text>
+      <rect class="flow-node" x="410" y="125" width="130" height="50"></rect>
+      <text class="flow-label" x="475" y="148">Anda 知识图谱</text>
+      <text class="flow-num" x="475" y="170" id="flow-anda">220C / 530P</text>
+      
       <!-- MCP 出口 -->
-      <rect class="flow-node" x="640" y="70" width="140" height="60" style="stroke:#1d9bf0"/>
-      <text class="flow-label" x="710" y="95" style="fill:#1d9bf0">MCP 记忆接口</text>
-      <text class="flow-label" x="710" y="112" style="font-size:9px;fill:#71767b">搜索 / 召回</text>
+      <rect class="flow-node-accent" x="630" y="55" width="140" height="55"></rect>
+      <text class="flow-label" x="700" y="78" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
+      <text class="flow-label-sm" x="700" y="95">搜索 / 召回</text>
+      
       <!-- 箭头 -->
-      <path class="flow-arrow" d="M120,38 L195,50"/>
-      <path class="flow-arrow" d="M120,88 L195,55"/>
-      <path class="flow-arrow" d="M120,138 L195,130"/>
-      <path class="flow-arrow" d="M120,173 L195,160"/>
+      <path class="flow-arrow" d="M120,33 L195,42"></path>
+      <path class="flow-arrow" d="M120,78 L195,47"></path>
+      <path class="flow-arrow" d="M120,123 L195,120"></path>
+      <path class="flow-arrow" d="M120,168 L195,150"></path>
+      
       <!-- 第一层 → 第二层 -->
-      <path class="flow-arrow" d="M330,55 L415,80"/>
+      <path class="flow-arrow-accent" d="M330,47 L405,68"></path>
+      
       <!-- 第三层 → 第二层（跨层综合） -->
-      <path class="flow-arrow" d="M330,130 L415,100" style="stroke:#f7b955;stroke-dasharray:4"/>
+      <path class="flow-arrow" d="M330,120 L405,90" style="stroke-dasharray: 4"></path>
+      
       <!-- 数据源 → Anda -->
-      <path class="flow-arrow" d="M120,173 C180,173 360,167 415,167"/>
+      <path class="flow-arrow" d="M120,168 C180,168 350,150 405,150"></path>
+      
       <!-- → MCP -->
-      <path class="flow-arrow" d="M550,90 L635,95"/>
-      <path class="flow-arrow" d="M550,167 L635,110"/>
+      <path class="flow-arrow-accent" d="M540,72 L625,78"></path>
+      <path class="flow-arrow-accent" d="M540,150 L625,90"></path>
     </svg>
   </div>
-  <p class="refresh-info">虚线 = 第二层跨层综合（从哈勃半径拉取相关内容归纳进 Wiki）</p>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background: var(--text-muted)"></div>
+      <span>数据流</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line-dashed" style="border-color: var(--text-muted)"></div>
+      <span>跨层综合</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background: var(--accent)"></div>
+      <span>核心链路</span>
+    </div>
+  </div>
 </div>
 
-<p class="refresh-info">每 30 秒自动刷新 | 上次更新：<span id="last-update">—</span></p>
+<p class="refresh-info">
+  每 30 秒自动刷新 · 上次更新：<span id="last-update">--:--:--</span>
+</p>
 
 <!-- 浏览弹窗 -->
 <div class="modal-overlay" id="modal">
-  <div class="modal">
+  <div class="modal" id="modal-panel">
     <div class="modal-header">
       <h3 id="modal-title">浏览内容</h3>
-      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     <div class="modal-search">
       <input type="text" id="modal-search-input" placeholder="输入关键词搜索..." onkeydown="if(event.key==='Enter')doSearch()">
@@ -166,13 +798,20 @@ async function fetchJSON(path) {
 
 function renderStatus(data) {
   const el = document.getElementById('status-container');
-  const statusText = { green: '正常', yellow: '注意', red: '异常' };
-  el.innerHTML = data.scripts.map(s => `
+  if (!data.scripts || data.scripts.length === 0) {
+    el.innerHTML = '<div class="status-item"><div class="name">no status</div><div class="time"><span class="dot dot-red"></span>无数据</div></div>';
+    return;
+  }
+  el.innerHTML = data.scripts.map(s => {
+    const color = s.status_color || s.status || 'red';
+    const label = s.host ? `${s.host} · ${s.name}` : s.name;
+    const detail = s.last_error_summary ? ` · ${s.last_error_summary}` : '';
+    return `
     <div class="status-item">
-      <div class="name">${s.name}</div>
-      <div class="time"><span class="dot dot-${s.status}"></span>${s.hours_ago >= 0 ? s.hours_ago + ' 小时前' : '从未运行'}</div>
+      <div class="name">${label}</div>
+      <div class="time"><span class="dot dot-${color}"></span>${s.hours_ago >= 0 ? s.hours_ago + ' 小时前' : '从未运行'}${detail}</div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function renderIndexes(data) {
@@ -181,11 +820,11 @@ function renderIndexes(data) {
     { key: 'memory_chunks', label: '事实碎片', index: 'memory_chunks' },
     { key: 'wiki_entries', label: 'Wiki 条目', index: 'wiki_entries' },
     { key: 'hubble_radius', label: '哈勃半径', index: 'hubble_radius' },
-    { key: 'anda_concepts', label: '图谱概念', index: 'anda' },
-    { key: 'anda_propositions', label: '图谱命题', index: 'anda' },
+    { key: 'anda_concepts', label: '图谱概念', index: 'anda_concepts' },
+    { key: 'anda_propositions', label: '图谱命题', index: 'anda_propositions' },
   ];
   el.innerHTML = items.map(i => `
-    <div class="index-item clickable" onclick="openBrowse('${i.index}', '${i.label}')">
+    <div class="index-item" onclick="openBrowse('${i.index}', '${i.label}')">
       <div class="num">${data[i.key] >= 0 ? data[i.key] : '?'}</div>
       <div class="label">${i.label}</div>
     </div>
@@ -204,35 +843,182 @@ function renderCharts(metrics) {
   const byDate = {};
   metrics.forEach(m => {
     if (!byDate[m.date]) byDate[m.date] = {};
-    byDate[m.date][m.script] = m;
+    if (!byDate[m.date][m.script]) byDate[m.date][m.script] = {};
+    const target = byDate[m.date][m.script];
+    ['total_messages','meaningful_messages','filtered_messages','chunks_produced','chunks','wiki_entries_written','articles_indexed','documents_indexed'].forEach(k => {
+      if (typeof m[k] === 'number') target[k] = (target[k] || 0) + m[k];
+    });
   });
   const dates = Object.keys(byDate).sort();
+
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.color = '#8f8f8f';
 
   // Formation 质量
   const ctx1 = document.getElementById('formationChart').getContext('2d');
   const formData = {
-    labels: dates,
+    labels: dates.map(d => d.slice(5)),
     datasets: [
-      { label: '原始消息', data: dates.map(d => byDate[d].hippocampus_formation?.total_messages || 0), borderColor: '#536471', tension: 0.3 },
-      { label: '有效消息', data: dates.map(d => byDate[d].hippocampus_formation?.meaningful_messages || 0), borderColor: '#00ba7c', tension: 0.3 },
-      { label: '过滤噪音', data: dates.map(d => byDate[d].hippocampus_formation?.filtered_messages || 0), borderColor: '#f4212e', tension: 0.3 },
+      { 
+        label: '原始消息', 
+        data: dates.map(d => byDate[d].hippocampus_formation?.total_messages || 0), 
+        borderColor: '#a8a8a8',
+        backgroundColor: 'rgba(168,168,168,0.08)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#a8a8a8',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        borderWidth: 2
+      },
+      { 
+        label: '有效消息', 
+        data: dates.map(d => byDate[d].hippocampus_formation?.meaningful_messages || 0), 
+        borderColor: '#28a948',
+        backgroundColor: 'rgba(40,169,72,0.08)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#28a948',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        borderWidth: 2
+      },
+      { 
+        label: '过滤噪音', 
+        data: dates.map(d => byDate[d].hippocampus_formation?.filtered_messages || 0), 
+        borderColor: '#fc0035',
+        backgroundColor: 'rgba(252,0,53,0.08)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#fc0035',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        borderWidth: 2
+      },
     ]
   };
   if (formationChart) formationChart.destroy();
-  formationChart = new Chart(ctx1, { type: 'line', data: formData, options: { responsive: true, plugins: { legend: { labels: { color: '#71767b', boxWidth: 12 } } }, scales: { x: { ticks: { color: '#536471' } }, y: { ticks: { color: '#536471' }, beginAtZero: true } } } });
+  formationChart = new Chart(ctx1, { 
+    type: 'line', 
+    data: formData, 
+    options: { 
+      responsive: true,
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#171717',
+          titleColor: '#fff',
+          bodyColor: '#ededed',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          titleFont: { weight: '600', size: 12 },
+          bodyFont: { size: 12 }
+        }
+      }, 
+      scales: { 
+        x: { 
+          grid: { display: false },
+          ticks: { font: { size: 10 } },
+          border: { display: false }
+        }, 
+        y: { 
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 } },
+          beginAtZero: true,
+          border: { display: false }
+        } 
+      } 
+    } 
+  });
 
   // 每日吞吐
   const ctx2 = document.getElementById('throughputChart').getContext('2d');
   const tpData = {
-    labels: dates,
+    labels: dates.map(d => d.slice(5)),
     datasets: [
-      { label: '第一层切片', data: dates.map(d => byDate[d].layer1_rag?.chunks_produced || byDate[d].layer1_flomo?.chunks || 0), backgroundColor: '#1d9bf044', borderColor: '#1d9bf0', tension: 0.3 },
-      { label: '第二层 Wiki', data: dates.map(d => byDate[d].layer2_wiki?.wiki_entries_written || 0), backgroundColor: '#00ba7c44', borderColor: '#00ba7c', tension: 0.3 },
-      { label: '第三层文章', data: dates.map(d => byDate[d].layer3_wechat?.articles_indexed || 0), backgroundColor: '#f7b95544', borderColor: '#f7b955', tension: 0.3 },
+      { 
+        label: '第一层切片', 
+        data: dates.map(d => (byDate[d].layer1_rag?.chunks_produced || 0) + (byDate[d].layer1_flomo?.chunks || 0)), 
+        backgroundColor: 'rgba(160,0,248,0.75)',
+        borderColor: '#a000f8',
+        borderWidth: 1,
+        borderRadius: 4,
+        yAxisID: 'ySmall'
+      },
+      { 
+        label: '第二层 Wiki', 
+        data: dates.map(d => byDate[d].layer2_wiki?.wiki_entries_written || 0), 
+        backgroundColor: 'rgba(40,169,72,0.75)',
+        borderColor: '#28a948',
+        borderWidth: 1,
+        borderRadius: 4,
+        yAxisID: 'ySmall'
+      },
+      { 
+        type: 'line',
+        label: '第三层文章（右轴）', 
+        data: dates.map(d => (byDate[d].layer3_wechat?.articles_indexed || 0) + (byDate[d].layer3_index?.documents_indexed || 0)), 
+        backgroundColor: 'rgba(255,174,0,0.12)',
+        borderColor: '#ffae00',
+        pointBackgroundColor: '#ffae00',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        borderWidth: 2,
+        tension: 0.35,
+        fill: false,
+        yAxisID: 'yArticles'
+      },
     ]
   };
   if (throughputChart) throughputChart.destroy();
-  throughputChart = new Chart(ctx2, { type: 'bar', data: tpData, options: { responsive: true, plugins: { legend: { labels: { color: '#71767b', boxWidth: 12 } } }, scales: { x: { ticks: { color: '#536471' }, stacked: false }, y: { ticks: { color: '#536471' }, beginAtZero: true } } } });
+  throughputChart = new Chart(ctx2, { 
+    type: 'bar', 
+    data: tpData, 
+    options: { 
+      responsive: true,
+      plugins: { 
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#171717',
+          titleColor: '#fff',
+          bodyColor: '#ededed',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          titleFont: { weight: '600', size: 12 },
+          bodyFont: { size: 12 }
+        }
+      }, 
+      scales: { 
+        x: { 
+          grid: { display: false },
+          ticks: { font: { size: 10 } },
+          border: { display: false }
+        }, 
+        ySmall: { 
+          position: 'left',
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 } },
+          beginAtZero: true,
+          border: { display: false }
+        },
+        yArticles: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { font: { size: 10 } },
+          beginAtZero: true,
+          border: { display: false }
+        } 
+      } 
+    } 
+  });
 }
 
 async function refresh() {
@@ -262,101 +1048,223 @@ updateClock();
 
 // ── 浏览弹窗逻辑 ──────────────────────────────────
 let currentBrowseIndex = '';
+let currentBrowseQuery = '';
+let currentBrowseTitle = '';
+let browseOffset = 0;
+let browseHasMore = false;
+let browseLoading = false;
+let browseResults = [];
+let browseMeta = null;
+const BROWSE_PAGE_SIZE = 30;
+
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  return [value];
+}
+
+function compactNumber(value) {
+  const n = Number(value || 0);
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function itemDate(item) {
+  const raw = item.updated_at || item.created_at || item.published_at || item.date || item.timestamp || item.end_ts || item.start_ts || '';
+  if (typeof raw === 'number') {
+    const ts = raw > 10000000000 ? raw : raw * 1000;
+    return new Date(ts).toISOString().slice(0, 16);
+  }
+  return String(raw).slice(0, 16);
+}
 
 function openBrowse(index, title) {
   currentBrowseIndex = index;
+  currentBrowseTitle = title;
+  currentBrowseQuery = '';
   document.getElementById('modal-title').textContent = '浏览：' + title;
   document.getElementById('modal-search-input').value = '';
   document.getElementById('modal').classList.add('active');
-  loadBrowseData(index, '');
+  document.getElementById('modal-panel').scrollTop = 0;
+  loadBrowseData(index, '', true);
 }
 
 function closeModal() {
   document.getElementById('modal').classList.remove('active');
 }
 
-// 点击遮罩关闭
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeModal();
 });
 
 function doSearch() {
   const q = document.getElementById('modal-search-input').value.trim();
-  loadBrowseData(currentBrowseIndex, q);
+  loadBrowseData(currentBrowseIndex, q, true);
 }
 
-async function loadBrowseData(index, query) {
+async function loadBrowseData(index, query, reset = false) {
+  if (browseLoading) return;
   const body = document.getElementById('modal-body');
-  body.innerHTML = '<p style="color:#71767b">加载中...</p>';
+  if (reset) {
+    browseOffset = 0;
+    browseHasMore = false;
+    browseResults = [];
+    browseMeta = null;
+    currentBrowseQuery = query;
+    body.innerHTML = '<p style="color: var(--text-muted)">加载中...</p>';
+  }
+  browseLoading = true;
   try {
-    const data = await fetchJSON(`/api/browse?index=${encodeURIComponent(index)}&q=${encodeURIComponent(query)}&limit=30`);
+    const data = await fetchJSON(`/api/browse?index=${encodeURIComponent(index)}&q=${encodeURIComponent(query)}&limit=${BROWSE_PAGE_SIZE}&offset=${browseOffset}`);
     if (!data.ok) {
-      body.innerHTML = `<p style="color:#f4212e">错误：${data.error}</p>`;
+      body.innerHTML = `<p style="color: var(--status-red)">错误：${data.error}</p>`;
       return;
     }
     if (index === 'anda') {
       renderAndaResults(data.results, body);
+      browseHasMore = false;
     } else {
-      renderMeiliResults(data.results, body);
+      browseMeta = data.meta || browseMeta;
+      if (browseMeta && data.source_summary) browseMeta.source_summary = data.source_summary;
+      browseResults = reset ? (data.results || []) : browseResults.concat(data.results || []);
+      browseOffset = data.next_offset ?? browseResults.length;
+      browseHasMore = !!data.has_more;
+      renderMeiliResults(browseResults, body, data);
     }
   } catch (e) {
-    body.innerHTML = `<p style="color:#f4212e">请求失败：${e.message}</p>`;
+    body.innerHTML = `<p style="color: var(--status-red)">请求失败：${e.message}</p>`;
+  } finally {
+    browseLoading = false;
   }
 }
 
-function renderMeiliResults(results, container) {
+function loadMoreBrowseData() {
+  if (!browseHasMore || browseLoading) return;
+  loadBrowseData(currentBrowseIndex, currentBrowseQuery, false);
+}
+
+document.getElementById('modal-panel').addEventListener('scroll', e => {
+  const panel = e.currentTarget;
+  if (browseHasMore && !browseLoading && panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 160) {
+    loadMoreBrowseData();
+  }
+});
+
+function renderIndexNote(data) {
+  const meta = data || browseMeta || {};
+  if (!meta.title && !meta.summary) return '';
+  const sources = asArray(meta.sources).map(s => `<span class="tag">${escapeHTML(s)}</span>`).join('');
+  const summary = asArray(meta.source_summary).map(s => `
+    <span class="source-chip">
+      <span class="source-name">${escapeHTML(s.source)}</span>
+      <span class="source-count">${escapeHTML(s.count)}</span>
+    </span>
+  `).join('');
+  return `
+    <div class="index-note">
+      <div class="note-title">${escapeHTML(meta.layer || '')}${meta.layer ? ' · ' : ''}${escapeHTML(meta.title || currentBrowseTitle)}</div>
+      <div class="note-text">${escapeHTML(meta.summary || '')}</div>
+      ${meta.pipeline ? `<div class="note-meta">${escapeHTML(meta.pipeline)}</div>` : ''}
+      ${meta.stat_logic ? `<div class="note-meta">${escapeHTML(meta.stat_logic)}</div>` : ''}
+      ${sources ? `<div class="note-tags">${sources}</div>` : ''}
+      ${summary ? `<div class="source-heading">当前索引来源分布</div><div class="source-list">${summary}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderMeiliResults(results, container, pageData = {}) {
+  const note = renderIndexNote({
+    ...(pageData.meta || browseMeta || {}),
+    source_summary: pageData.source_summary || browseMeta?.source_summary || [],
+  });
   if (!results || results.length === 0) {
-    container.innerHTML = '<p style="color:#71767b">无内容</p>';
+    container.innerHTML = note + '<p style="color: var(--text-muted)">无内容</p>';
     return;
   }
-  container.innerHTML = results.map(item => {
+  const items = results.map(item => {
     const title = item.title || item.summary || '';
     const content = item.content || item.text || item.digest || '';
-    const source = item.source || '';
-    const date = item.created_at || item.updated_at || item.published_at || item.date || '';
+    const source = item.source || item.sources || '';
+    const date = itemDate(item);
     const tags = item.tags || item.keywords || [];
-    const tagStr = tags.length ? tags.map(t => `<span style="background:#2f3336;padding:2px 6px;border-radius:4px;font-size:0.7rem;margin-right:4px">${t}</span>`).join('') : '';
+    const tagStr = tags.length ? tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('') : '';
     return `
       <div class="browse-item">
-        ${title ? `<div class="title">${title}</div>` : ''}
-        <div class="content">${content.slice(0, 300)}${content.length > 300 ? '...' : ''}</div>
-        <div class="meta">${source ? '来源：' + source : ''} ${date ? ' | ' + date.slice(0, 16) : ''} ${tagStr}</div>
+        ${title ? `<div class="title">${escapeHTML(title)}</div>` : ''}
+        <div class="content">${escapeHTML(content.slice(0, 300))}${content.length > 300 ? '...' : ''}</div>
+        <div class="meta">
+          ${source ? '<span>来源：' + escapeHTML(source) + '</span>' : ''}
+          ${date ? '<span>' + escapeHTML(date) + '</span>' : ''}
+          ${tagStr}
+        </div>
       </div>
     `;
   }).join('');
+  const total = pageData.total || results.length;
+  const footer = browseHasMore
+    ? `<div class="modal-footer"><button class="load-more" onclick="loadMoreBrowseData()">加载更多（${results.length} / ${total}）</button></div>`
+    : `<div class="modal-footer">已显示 ${results.length} / ${total}</div>`;
+  container.innerHTML = note + items + footer;
 }
 
 function renderAndaResults(results, container) {
   if (!results) {
-    container.innerHTML = '<p style="color:#71767b">无内容</p>';
+    container.innerHTML = '<p style="color: var(--text-muted)">无内容</p>';
     return;
   }
-  let html = '';
-  // 统计信息
-  if (results.concepts !== undefined) {
-    html += `<div class="browse-item">
-      <div class="title">图谱统计</div>
-      <div class="content">概念节点：${results.concepts} 个 | 命题关系：${results.propositions} 条 | 对话轮次：${results.conversations} 个</div>
-      <div class="meta">Formation 用量：${(results.formation_usage?.input_tokens/1000000)?.toFixed(1) || 0}M tokens / ${results.formation_usage?.requests || 0} 次请求</div>
-    </div>`;
-  }
-  // 最近对话列表
-  if (results.recent_conversations && results.recent_conversations.length > 0) {
-    html += '<div class="browse-item"><div class="title">最近对话记录</div></div>';
-    results.recent_conversations.forEach(conv => {
-      const id = conv.id || conv;
-      const ts = conv.created_at || conv.timestamp || '';
-      html += `<div class="browse-item">
-        <div class="content" style="font-size:0.75rem">#${typeof id === 'object' ? JSON.stringify(id) : id}</div>
-        ${ts ? `<div class="meta">${ts}</div>` : ''}
+  let html = '<div class="index-note"><div class="note-title">Anda Hippocampus 知识图谱</div><div class="note-text">这里不是文章列表，而是从 AI 对话记忆中抽取出的长期主题、关系和背景。当前 Dashboard 展示概览，不再展开原始 formation JSON。</div></div>';
+  if (results.overview_cards) {
+    html += '<div class="overview-grid">';
+    results.overview_cards.forEach(card => {
+      html += `<div class="overview-card">
+        <div class="value">${escapeHTML(compactNumber(card.value))}</div>
+        <div class="label">${escapeHTML(card.label)}</div>
+        <div class="description">${escapeHTML(card.description)}</div>
       </div>`;
     });
+    html += '</div>';
   }
-  if (!html) {
-    html = `<div class="browse-item"><div class="content" style="white-space:pre-wrap;font-size:0.75rem">${JSON.stringify(results, null, 2)}</div></div>`;
+  (results.sections || []).forEach(section => {
+    html += `<div class="browse-item"><div class="title">${escapeHTML(section.title)}</div>`;
+    (section.items || []).forEach(item => {
+      html += `<div class="content">· ${escapeHTML(item)}</div>`;
+    });
+    html += '</div>';
+  });
+  if (results.usage_rows && results.usage_rows.length) {
+    html += '<div class="browse-item"><div class="title">运行用量</div>';
+    results.usage_rows.forEach(row => {
+      html += `<div class="content">${escapeHTML(row.label)}：${escapeHTML(row.requests)} 次请求，${escapeHTML(compactNumber(row.input_tokens))} input tokens</div>`;
+    });
+    html += '</div>';
+  }
+  if (results.recent_batches && results.recent_batches.length) {
+    html += '<div class="browse-item"><div class="title">最近写入批次</div></div>';
+    results.recent_batches.forEach(batch => {
+      html += `<div class="browse-item">
+        <div class="content">${escapeHTML(batch.summary)}</div>
+        <div class="meta">
+          <span>#${escapeHTML(batch.id)}</span>
+          ${batch.created_at ? `<span>${escapeHTML(batch.created_at)}</span>` : ''}
+          ${batch.status ? `<span>${escapeHTML(batch.status)}</span>` : ''}
+          <span>${escapeHTML(batch.message_count)} message</span>
+        </div>
+      </div>`;
+    });
   }
   container.innerHTML = html;
 }
 </script>
+
 </body>
 </html>
