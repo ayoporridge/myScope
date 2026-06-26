@@ -16,6 +16,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 from _metrics import record_last_run, record_metrics
+from formation_quality import write_snapshot as write_formation_quality_snapshot
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -391,11 +392,17 @@ def main():
     print(f"  收集到 {raw_count} 条原始消息")
 
     # 有效消息过滤
-    all_messages = [m for m in all_messages if is_meaningful(m)]
-    filtered_count = raw_count - len(all_messages)
-    print(f"  过滤噪音：{filtered_count} 条 → 剩余 {len(all_messages)} 条有效消息")
+    meaningful_messages = [m for m in all_messages if is_meaningful(m)]
+    filtered_count = raw_count - len(meaningful_messages)
+    print(f"  过滤噪音：{filtered_count} 条 → 剩余 {len(meaningful_messages)} 条有效消息")
 
-    if not all_messages:
+    try:
+        snapshot_path = write_formation_quality_snapshot(days=14)
+        print(f"  [quality] 已刷新内容日期快照：{snapshot_path}")
+    except Exception as e:
+        print(f"  [quality] 快照刷新失败：{e}")
+
+    if not meaningful_messages:
         print("  无有效消息，跳过")
         save_state(new_state)
         record_last_run("hippocampus_formation")
@@ -412,9 +419,9 @@ def main():
 
     batch_size = 40
     success = 0
-    total_batches = (len(all_messages) + batch_size - 1) // batch_size
-    for i in range(0, len(all_messages), batch_size):
-        batch = all_messages[i:i + batch_size]
+    total_batches = (len(meaningful_messages) + batch_size - 1) // batch_size
+    for i in range(0, len(meaningful_messages), batch_size):
+        batch = meaningful_messages[i:i + batch_size]
         ok = post_formation(batch)
         batch_num = i // batch_size + 1
         if ok:
@@ -426,7 +433,7 @@ def main():
 
     if success == total_batches:
         save_state(new_state)
-        print(f"[完成] 共提交 {success} 批，{len(all_messages)} 条消息")
+        print(f"[完成] 共提交 {success} 批，{len(meaningful_messages)} 条消息")
     else:
         print(f"[警告] 有 {total_batches - success} 批失败，状态未保存（下次会重试）")
 
@@ -435,7 +442,7 @@ def main():
     record_metrics(
         "hippocampus_formation",
         total_messages=raw_count,
-        meaningful_messages=len(all_messages),
+        meaningful_messages=len(meaningful_messages),
         filtered_messages=filtered_count,
         batches_success=success,
         batches_total=total_batches,

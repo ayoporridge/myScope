@@ -36,6 +36,7 @@ LAST_RUN_FILE = LOGS_DIR / "last_run.json"
 JOB_STATUS_FILE = LOGS_DIR / "job_status.json"
 METRICS_FILE = LOGS_DIR / "metrics.jsonl"
 METRICS_SHARED_DIR = Path(__file__).parent.parent / "data" / "metrics"
+FORMATION_QUALITY_DIR = Path(__file__).parent.parent / "data" / "formation_quality"
 JOB_STATUS_SHARED_DIR = Path(__file__).parent.parent / "data" / "job_status"
 HTML_FILE = Path(__file__).parent / "dashboard_page.html"
 
@@ -493,6 +494,85 @@ def get_content_throughput(days: int = 7) -> dict:
     }
     _CONTENT_THROUGHPUT_CACHE[days] = (now_ts, result)
     return result
+
+
+def _empty_formation_rows(days: int) -> tuple[list[str], dict]:
+    dates = _date_range(days)
+    rows = {
+        date: {
+            "date": date,
+            "total_messages": 0,
+            "meaningful_messages": 0,
+            "filtered_messages": 0,
+        }
+        for date in dates
+    }
+    return dates, rows
+
+
+def _add_formation_count(target: dict, item: dict):
+    target["total_messages"] += int(item.get("total_messages") or 0)
+    target["meaningful_messages"] += int(item.get("meaningful_messages") or 0)
+    target["filtered_messages"] += int(item.get("filtered_messages") or 0)
+
+
+def get_formation_quality(days: int = 7) -> dict:
+    """按 AI 对话实际发生日期聚合 formation 质量，而不是按脚本处理日期聚合。"""
+    days = max(1, min(days, 60))
+    dates, rows = _empty_formation_rows(days)
+    date_set = set(dates)
+    sources = {}
+    used_snapshots = False
+
+    if FORMATION_QUALITY_DIR.exists():
+        for path in sorted(FORMATION_QUALITY_DIR.glob("*.json")):
+            try:
+                data = json.loads(path.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            hostname = data.get("hostname") or path.stem
+            host_total = 0
+            for item in data.get("rows", []):
+                date = item.get("date")
+                if date not in date_set:
+                    continue
+                _add_formation_count(rows[date], item)
+                host_total += int(item.get("total_messages") or 0)
+            sources[hostname] = {
+                "source": "formation_quality_snapshot",
+                "messages_seen": host_total,
+                "generated_at": data.get("generated_at", ""),
+            }
+            used_snapshots = True
+
+    if not used_snapshots:
+        for entry in get_metrics(days):
+            if entry.get("script") != "hippocampus_formation":
+                continue
+            daily_counts = entry.get("formation_daily_counts")
+            if isinstance(daily_counts, list):
+                for item in daily_counts:
+                    date = item.get("date")
+                    if date in date_set:
+                        _add_formation_count(rows[date], item)
+            else:
+                date = entry.get("date")
+                if date in date_set:
+                    _add_formation_count(rows[date], entry)
+        sources["fallback"] = {
+            "source": "metrics_processing_date",
+            "messages_seen": sum(row["total_messages"] for row in rows.values()),
+        }
+
+    return {
+        "ok": True,
+        "mode": "content_date" if used_snapshots else "processing_date_fallback",
+        "days": days,
+        "dates": dates,
+        "rows": [rows[date] for date in dates],
+        "sources": sources,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+    }
 
 
 def _browse_meili_documents(index: str, query: str, limit: int, offset: int = 0) -> dict | None:
@@ -1160,6 +1240,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif path == "/api/metrics":
             days = int(params.get("days", [7])[0])
             self._json_response(get_metrics(days))
+        elif path == "/api/formation-quality":
+            days = int(params.get("days", [7])[0])
+            self._json_response(get_formation_quality(days))
         elif path == "/api/content-throughput":
             days = int(params.get("days", [7])[0])
             self._json_response(get_content_throughput(days))

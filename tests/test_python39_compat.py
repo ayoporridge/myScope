@@ -7,6 +7,7 @@ class Python39CompatibilityTests(unittest.TestCase):
         scripts = [
             "scripts/dashboard.py",
             "scripts/_metrics.py",
+            "scripts/formation_quality.py",
             "scripts/run_due_jobs.py",
             "scripts/run_job.py",
             "scripts/layer2_wiki.py",

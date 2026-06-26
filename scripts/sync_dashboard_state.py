@@ -40,6 +40,7 @@ def sync_dashboard_state(target: str = DEFAULT_TARGET) -> list[str]:
     files = [
         (PROJECT_DIR / "data" / "job_status" / f"{HOSTNAME}.json", "data/job_status"),
         (PROJECT_DIR / "data" / "metrics" / f"{HOSTNAME}.jsonl", "data/metrics"),
+        (PROJECT_DIR / "data" / "formation_quality" / f"{HOSTNAME}.json", "data/formation_quality"),
     ]
     existing = [(path, subdir) for path, subdir in files if path.exists()]
     if not existing:

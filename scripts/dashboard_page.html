@@ -805,7 +805,7 @@ canvas {
             <span>过滤噪音</span>
           </div>
         </div>
-        <div class="chart-note">原始消息是采集到的 AI 对话片段；有效消息是过滤后提交给 Hippocampus 的内容；过滤噪音是被判定为状态回显、工具过程或低信息量的内容。</div>
+        <div class="chart-note">按 AI 对话实际发生日期统计：原始消息是采集到的对话片段；有效消息是过滤后提交给 Hippocampus 的内容；过滤噪音是状态回显、工具过程或低信息量内容。</div>
       </div>
       <div class="card">
         <h2>每日吞吐量</h2>
@@ -1037,7 +1037,7 @@ function renderIndexes(data) {
 let formationChart = null;
 let throughputChart = null;
 
-function renderCharts(metrics, throughput) {
+function renderCharts(metrics, throughput, formationQuality) {
   const byDate = {};
   metrics.forEach(m => {
     if (!byDate[m.date]) byDate[m.date] = {};
@@ -1048,6 +1048,14 @@ function renderCharts(metrics, throughput) {
     });
   });
   const dates = Object.keys(byDate).sort();
+  const formationRows = (formationQuality && Array.isArray(formationQuality.rows) && formationQuality.rows.length)
+    ? formationQuality.rows
+    : dates.map(d => ({
+        date: d,
+        total_messages: byDate[d].hippocampus_formation?.total_messages || 0,
+        meaningful_messages: byDate[d].hippocampus_formation?.meaningful_messages || 0,
+        filtered_messages: byDate[d].hippocampus_formation?.filtered_messages || 0,
+      }));
   const throughputRows = (throughput && Array.isArray(throughput.rows) && throughput.rows.length)
     ? throughput.rows
     : dates.map(d => ({
@@ -1063,11 +1071,11 @@ function renderCharts(metrics, throughput) {
   // Formation 质量
   const ctx1 = document.getElementById('formationChart').getContext('2d');
   const formData = {
-    labels: dates.map(d => d.slice(5)),
+    labels: formationRows.map(row => row.date.slice(5)),
     datasets: [
       { 
         label: '原始消息', 
-        data: dates.map(d => byDate[d].hippocampus_formation?.total_messages || 0), 
+        data: formationRows.map(row => row.total_messages || 0), 
         borderColor: '#a8a8a8',
         backgroundColor: 'rgba(168,168,168,0.08)',
         tension: 0.4,
@@ -1080,7 +1088,7 @@ function renderCharts(metrics, throughput) {
       },
       { 
         label: '有效消息', 
-        data: dates.map(d => byDate[d].hippocampus_formation?.meaningful_messages || 0), 
+        data: formationRows.map(row => row.meaningful_messages || 0), 
         borderColor: '#28a948',
         backgroundColor: 'rgba(40,169,72,0.08)',
         tension: 0.4,
@@ -1093,7 +1101,7 @@ function renderCharts(metrics, throughput) {
       },
       { 
         label: '过滤噪音', 
-        data: dates.map(d => byDate[d].hippocampus_formation?.filtered_messages || 0), 
+        data: formationRows.map(row => row.filtered_messages || 0), 
         borderColor: '#fc0035',
         backgroundColor: 'rgba(252,0,53,0.08)',
         tension: 0.4,
@@ -1229,15 +1237,16 @@ function renderCharts(metrics, throughput) {
 
 async function refresh() {
   try {
-    const [status, metrics, indexes, throughput] = await Promise.all([
+    const [status, metrics, indexes, formationQuality, throughput] = await Promise.all([
       fetchJSON('/api/status'),
       fetchJSON('/api/metrics?days=7'),
       fetchJSON('/api/indexes'),
+      fetchJSON('/api/formation-quality?days=7'),
       fetchJSON('/api/content-throughput?days=7'),
     ]);
     renderStatus(status);
     renderIndexes(indexes);
-    renderCharts(metrics, throughput);
+    renderCharts(metrics, throughput, formationQuality);
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-CN');
   } catch (e) {
     console.error('刷新失败:', e);

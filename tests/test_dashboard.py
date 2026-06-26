@@ -194,6 +194,38 @@ class DashboardTests(unittest.TestCase):
             data["rows"],
         )
 
+    def test_formation_quality_prefers_content_date_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            quality_dir = Path(tmp) / "data" / "formation_quality"
+            quality_dir.mkdir(parents=True)
+            (quality_dir / "macbook.json").write_text(json.dumps({
+                "hostname": "macbook",
+                "mode": "content_date",
+                "rows": [
+                    {"date": "2026-06-25", "total_messages": 10, "meaningful_messages": 8, "filtered_messages": 2},
+                    {"date": "2026-06-26", "total_messages": 5, "meaningful_messages": 4, "filtered_messages": 1},
+                ],
+            }))
+
+            original_dir = self.dashboard.FORMATION_QUALITY_DIR
+            original_range = self.dashboard._date_range
+            self.dashboard.FORMATION_QUALITY_DIR = quality_dir
+            self.dashboard._date_range = lambda days: ["2026-06-25", "2026-06-26"]
+            try:
+                data = self.dashboard.get_formation_quality(2)
+            finally:
+                self.dashboard.FORMATION_QUALITY_DIR = original_dir
+                self.dashboard._date_range = original_range
+
+        self.assertEqual("content_date", data["mode"])
+        self.assertEqual(
+            [
+                {"date": "2026-06-25", "total_messages": 10, "meaningful_messages": 8, "filtered_messages": 2},
+                {"date": "2026-06-26", "total_messages": 5, "meaningful_messages": 4, "filtered_messages": 1},
+            ],
+            data["rows"],
+        )
+
     def test_browse_index_prefers_meili_documents_sorted_by_freshness(self):
         class Response:
             status_code = 200
@@ -453,7 +485,9 @@ class DashboardTests(unittest.TestCase):
     def test_dashboard_page_counts_layer3_index_documents_as_articles(self):
         html = Path("scripts/dashboard_page.html").read_text()
 
+        self.assertIn("/api/formation-quality?days=7", html)
         self.assertIn("/api/content-throughput?days=7", html)
+        self.assertIn("formationRows.map(row => row.total_messages", html)
         self.assertIn("throughputRows.map(row => row.layer1", html)
         self.assertIn("throughputRows.map(row => row.layer2", html)
         self.assertIn("throughputRows.map(row => row.layer3", html)
