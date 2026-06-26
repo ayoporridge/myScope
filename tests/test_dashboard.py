@@ -474,6 +474,16 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("source-chip", html)
         self.assertIn("source-name", html)
 
+    def test_dashboard_page_uses_asymmetric_overview_layout(self):
+        html = Path("scripts/dashboard_page.html").read_text()
+
+        self.assertIn("overview-layout", html)
+        self.assertIn("grid-template-columns: minmax(320px, 0.72fr) minmax(620px, 1.28fr)", html)
+        self.assertIn("status-summary", html)
+        self.assertIn("status-list", html)
+        self.assertIn("is-graph", html)
+        self.assertIn("scope: '第三层'", html)
+
 
 if __name__ == "__main__":
     unittest.main()

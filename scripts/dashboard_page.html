@@ -92,8 +92,17 @@ body {
   margin-bottom: 16px;
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+.overview-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.72fr) minmax(620px, 1.28fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1080px) {
+  .grid,
+  .overview-layout { grid-template-columns: 1fr; }
 }
 
 /* ═══ Cards ═══ */
@@ -113,37 +122,107 @@ body {
   margin-bottom: 16px;
 }
 
-/* ═══ Status Grid ═══ */
-.status-grid {
-  display: flex;
-  flex-wrap: wrap;
+/* ═══ Top Overview ═══ */
+.status-card {
+  padding: 18px;
+}
+
+.index-card {
+  padding: 20px 24px 22px;
+}
+
+/* ═══ Status Panel ═══ */
+.status-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.status-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
-.status-item {
+.status-summary-item {
+  min-width: 0;
   background: var(--bg-page-alt);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  flex: 1;
-  min-width: 140px;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.status-summary-item .summary-value {
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-summary-item .summary-label {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.status-list {
+  display: grid;
+  gap: 6px;
+  max-height: 336px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.status-item {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-page-alt);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.status-item .host {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .status-item .name {
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+  color: var(--text-secondary);
   font-family: 'SF Mono', 'Fira Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-item .time {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 6px;
+  justify-content: flex-end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-item .error {
+  color: var(--status-red);
+}
+
+@media (max-width: 560px) {
+  .status-summary { grid-template-columns: 1fr; }
+  .status-item { grid-template-columns: 52px minmax(0, 1fr); }
+  .status-item .time { grid-column: 2; justify-content: flex-start; }
 }
 
 .dot {
@@ -160,18 +239,28 @@ body {
 /* ═══ Index Grid ═══ */
 .index-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .index-item {
-  text-align: center;
-  padding: 16px 8px;
+  grid-column: span 2;
+  min-height: 116px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  padding: 16px;
   background: var(--bg-page-alt);
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.index-item.is-graph {
+  grid-column: span 3;
+  min-height: 96px;
 }
 
 .index-item:hover {
@@ -180,11 +269,12 @@ body {
 }
 
 .index-item .num {
-  font-size: 24px;
+  font-size: 32px;
+  line-height: 1;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: 0;
-  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .index-item:hover .num {
@@ -192,9 +282,30 @@ body {
 }
 
 .index-item .label {
-  font-size: 11px;
-  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
   color: var(--text-tertiary);
+}
+
+.index-item .scope {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+@media (max-width: 1280px) {
+  .index-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .index-item,
+  .index-item.is-graph { grid-column: auto; }
+}
+
+@media (max-width: 560px) {
+  .index-grid { grid-template-columns: 1fr; }
+  .index-item,
+  .index-item.is-graph { min-height: 92px; }
+  .index-item .num { font-size: 28px; }
 }
 
 /* ═══ Charts ═══ */
@@ -592,46 +703,80 @@ canvas {
 </div>
 
 <!-- Row 1: Status + Indexes -->
-<div class="grid">
-  <div class="card">
+<div class="overview-layout">
+  <div class="card status-card">
     <h2>脚本存活状态</h2>
-    <div id="status-container" class="status-grid">
-      <div class="status-item">
-        <div class="name">hippocampus_formation</div>
-        <div class="time"><span class="dot dot-green"></span>3 小时前</div>
+    <div id="status-container" class="status-panel">
+      <div class="status-summary">
+        <div class="status-summary-item">
+          <div class="summary-value">3/3</div>
+          <div class="summary-label">正常任务</div>
+        </div>
+        <div class="status-summary-item">
+          <div class="summary-value">0</div>
+          <div class="summary-label">异常任务</div>
+        </div>
+        <div class="status-summary-item">
+          <div class="summary-value">4.5h</div>
+          <div class="summary-label">最久间隔</div>
+        </div>
       </div>
-      <div class="status-item">
-        <div class="name">layer1_flomo</div>
-        <div class="time"><span class="dot dot-green"></span>4.5 小时前</div>
-      </div>
-      <div class="status-item">
-        <div class="name">layer2_wiki</div>
-        <div class="time"><span class="dot dot-green"></span>3.5 小时前</div>
+      <div class="status-list">
+        <div class="status-item">
+          <div class="host">本机</div>
+          <div class="name">hippocampus_formation</div>
+          <div class="time"><span class="dot dot-green"></span>3 小时前</div>
+        </div>
+        <div class="status-item">
+          <div class="host">本机</div>
+          <div class="name">layer1_flomo</div>
+          <div class="time"><span class="dot dot-green"></span>4.5 小时前</div>
+        </div>
+        <div class="status-item">
+          <div class="host">本机</div>
+          <div class="name">layer2_wiki</div>
+          <div class="time"><span class="dot dot-green"></span>3.5 小时前</div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="card">
+  <div class="card index-card">
     <h2>数据总量</h2>
     <div id="index-container" class="index-grid">
       <div class="index-item" onclick="openBrowse('memory_chunks', '事实碎片')">
         <div class="num">8874</div>
-        <div class="label">事实碎片</div>
+        <div>
+          <div class="label">事实碎片</div>
+          <div class="scope">第一层</div>
+        </div>
       </div>
       <div class="index-item" onclick="openBrowse('wiki_entries', 'Wiki 条目')">
         <div class="num">216</div>
-        <div class="label">Wiki 条目</div>
+        <div>
+          <div class="label">Wiki 条目</div>
+          <div class="scope">第二层</div>
+        </div>
       </div>
       <div class="index-item" onclick="openBrowse('hubble_radius', '哈勃半径')">
         <div class="num">15230</div>
-        <div class="label">哈勃半径</div>
+        <div>
+          <div class="label">哈勃半径</div>
+          <div class="scope">第三层</div>
+        </div>
       </div>
-      <div class="index-item" onclick="openBrowse('anda_concepts', '图谱概念')">
+      <div class="index-item is-graph" onclick="openBrowse('anda_concepts', '图谱概念')">
         <div class="num">220</div>
-        <div class="label">图谱概念</div>
+        <div>
+          <div class="label">图谱概念</div>
+          <div class="scope">知识图谱</div>
+        </div>
       </div>
-      <div class="index-item" onclick="openBrowse('anda_propositions', '图谱命题')">
+      <div class="index-item is-graph" onclick="openBrowse('anda_propositions', '图谱命题')">
         <div class="num">530</div>
-        <div class="label">图谱命题</div>
+        <div>
+          <div class="label">图谱命题</div>
+          <div class="scope">知识图谱</div>
+        </div>
       </div>
     </div>
   </div>
@@ -796,37 +941,84 @@ async function fetchJSON(path) {
   return r.json();
 }
 
+function shortHost(host) {
+  const text = String(host || '本机');
+  if (text.toLowerCase().includes('macbook')) return 'MacBook';
+  if (text.toLowerCase().includes('mini')) return 'Mac mini';
+  return text.length > 10 ? text.slice(0, 10) : text;
+}
+
+function formatShortHours(value) {
+  if (typeof value !== 'number' || value < 0) return '--';
+  const rounded = value >= 10 ? value.toFixed(0) : value.toFixed(1);
+  return `${rounded.replace(/\.0$/, '')}h`;
+}
+
+function formatHoursAgo(value) {
+  if (typeof value !== 'number' || value < 0) return '从未运行';
+  const rounded = value >= 10 ? value.toFixed(1) : value.toFixed(1);
+  return `${rounded.replace(/\.0$/, '')} 小时前`;
+}
+
 function renderStatus(data) {
   const el = document.getElementById('status-container');
   if (!data.scripts || data.scripts.length === 0) {
-    el.innerHTML = '<div class="status-item"><div class="name">no status</div><div class="time"><span class="dot dot-red"></span>无数据</div></div>';
+    el.innerHTML = '<div class="status-list"><div class="status-item"><div class="host">--</div><div class="name">no status</div><div class="time"><span class="dot dot-red"></span>无数据</div></div></div>';
     return;
   }
-  el.innerHTML = data.scripts.map(s => {
+  const scripts = data.scripts;
+  const good = scripts.filter(s => (s.status_color || s.status || 'red') === 'green').length;
+  const issues = scripts.length - good;
+  const maxHours = scripts.reduce((max, s) => (
+    typeof s.hours_ago === 'number' && s.hours_ago >= 0 ? Math.max(max, s.hours_ago) : max
+  ), 0);
+  const rows = scripts.map(s => {
     const color = s.status_color || s.status || 'red';
-    const label = s.host ? `${s.host} · ${s.name}` : s.name;
+    const host = shortHost(s.host);
+    const fullLabel = s.host ? `${s.host} · ${s.name}` : s.name;
     const detail = s.last_error_summary ? ` · ${s.last_error_summary}` : '';
     return `
-    <div class="status-item">
-      <div class="name">${label}</div>
-      <div class="time"><span class="dot dot-${color}"></span>${s.hours_ago >= 0 ? s.hours_ago + ' 小时前' : '从未运行'}${detail}</div>
+    <div class="status-item" title="${escapeHTML(fullLabel + detail)}">
+      <div class="host">${escapeHTML(host)}</div>
+      <div class="name">${escapeHTML(s.name || 'unknown')}${detail ? `<span class="error">${escapeHTML(detail)}</span>` : ''}</div>
+      <div class="time"><span class="dot dot-${color}"></span>${escapeHTML(formatHoursAgo(s.hours_ago))}</div>
     </div>
   `}).join('');
+  el.innerHTML = `
+    <div class="status-summary">
+      <div class="status-summary-item">
+        <div class="summary-value">${good}/${scripts.length}</div>
+        <div class="summary-label">正常任务</div>
+      </div>
+      <div class="status-summary-item">
+        <div class="summary-value">${issues}</div>
+        <div class="summary-label">异常任务</div>
+      </div>
+      <div class="status-summary-item">
+        <div class="summary-value">${formatShortHours(maxHours)}</div>
+        <div class="summary-label">最久间隔</div>
+      </div>
+    </div>
+    <div class="status-list">${rows}</div>
+  `;
 }
 
 function renderIndexes(data) {
   const el = document.getElementById('index-container');
   const items = [
-    { key: 'memory_chunks', label: '事实碎片', index: 'memory_chunks' },
-    { key: 'wiki_entries', label: 'Wiki 条目', index: 'wiki_entries' },
-    { key: 'hubble_radius', label: '哈勃半径', index: 'hubble_radius' },
-    { key: 'anda_concepts', label: '图谱概念', index: 'anda_concepts' },
-    { key: 'anda_propositions', label: '图谱命题', index: 'anda_propositions' },
+    { key: 'memory_chunks', label: '事实碎片', scope: '第一层', index: 'memory_chunks', kind: 'layer' },
+    { key: 'wiki_entries', label: 'Wiki 条目', scope: '第二层', index: 'wiki_entries', kind: 'layer' },
+    { key: 'hubble_radius', label: '哈勃半径', scope: '第三层', index: 'hubble_radius', kind: 'layer' },
+    { key: 'anda_concepts', label: '图谱概念', scope: '知识图谱', index: 'anda_concepts', kind: 'graph' },
+    { key: 'anda_propositions', label: '图谱命题', scope: '知识图谱', index: 'anda_propositions', kind: 'graph' },
   ];
   el.innerHTML = items.map(i => `
-    <div class="index-item" onclick="openBrowse('${i.index}', '${i.label}')">
+    <div class="index-item ${i.kind === 'graph' ? 'is-graph' : 'is-layer'}" onclick="openBrowse('${i.index}', '${i.label}')">
       <div class="num">${data[i.key] >= 0 ? data[i.key] : '?'}</div>
-      <div class="label">${i.label}</div>
+      <div>
+        <div class="label">${i.label}</div>
+        <div class="scope">${i.scope}</div>
+      </div>
     </div>
   `).join('');
   document.getElementById('flow-l1').textContent = data.memory_chunks >= 0 ? data.memory_chunks : '?';
