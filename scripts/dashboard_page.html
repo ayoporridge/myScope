@@ -92,17 +92,28 @@ body {
   margin-bottom: 16px;
 }
 
-.overview-layout {
+.dashboard-main {
   display: grid;
-  grid-template-columns: minmax(320px, 0.72fr) minmax(620px, 1.28fr);
+  grid-template-columns: minmax(360px, 0.42fr) minmax(680px, 1fr);
   gap: 16px;
   align-items: start;
   margin-bottom: 16px;
 }
 
+.insight-column {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.chart-grid {
+  margin-bottom: 0;
+}
+
 @media (max-width: 1080px) {
   .grid,
-  .overview-layout { grid-template-columns: 1fr; }
+  .dashboard-main { grid-template-columns: 1fr; }
+  .insight-column { order: -1; }
 }
 
 /* ═══ Cards ═══ */
@@ -128,7 +139,7 @@ body {
 }
 
 .index-card {
-  padding: 20px 24px 22px;
+  padding: 18px;
 }
 
 /* ═══ Status Panel ═══ */
@@ -168,21 +179,19 @@ body {
 
 .status-list {
   display: grid;
-  gap: 6px;
-  max-height: 336px;
-  overflow: auto;
-  padding-right: 2px;
+  gap: 5px;
 }
 
 .status-item {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1fr) auto;
+  grid-template-columns: 58px minmax(0, 1fr) 86px;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: var(--bg-page-alt);
   border: 1px solid var(--border-light);
   border-radius: 6px;
-  padding: 8px 10px;
+  min-height: 32px;
+  padding: 6px 8px;
   min-width: 0;
 }
 
@@ -194,7 +203,7 @@ body {
 }
 
 .status-item .name {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-secondary);
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -204,7 +213,7 @@ body {
 }
 
 .status-item .time {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-primary);
   display: flex;
@@ -239,28 +248,22 @@ body {
 /* ═══ Index Grid ═══ */
 .index-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .index-item {
-  grid-column: span 2;
-  min-height: 116px;
+  min-height: 104px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   text-align: left;
-  padding: 16px;
+  padding: 14px;
   background: var(--bg-page-alt);
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.15s ease;
-}
-
-.index-item.is-graph {
-  grid-column: span 3;
-  min-height: 96px;
 }
 
 .index-item:hover {
@@ -269,7 +272,7 @@ body {
 }
 
 .index-item .num {
-  font-size: 32px;
+  font-size: 30px;
   line-height: 1;
   font-weight: 600;
   color: var(--text-primary);
@@ -295,16 +298,18 @@ body {
   color: var(--accent);
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1280px) and (min-width: 1081px) {
+  .index-item .num { font-size: 26px; }
+  .index-item { min-height: 96px; padding: 12px; }
+}
+
+@media (max-width: 720px) {
   .index-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .index-item,
-  .index-item.is-graph { grid-column: auto; }
+  .index-item:last-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 560px) {
-  .index-grid { grid-template-columns: 1fr; }
-  .index-item,
-  .index-item.is-graph { min-height: 92px; }
+  .index-item { min-height: 86px; }
   .index-item .num { font-size: 28px; }
 }
 
@@ -702,8 +707,8 @@ canvas {
   <p class="subtitle">记忆系统运行状态与数据流动 · <span id="clock"></span></p>
 </div>
 
-<!-- Row 1: Status + Indexes -->
-<div class="overview-layout">
+<!-- Overview -->
+<div class="dashboard-main">
   <div class="card status-card">
     <h2>脚本存活状态</h2>
     <div id="status-container" class="status-panel">
@@ -740,91 +745,92 @@ canvas {
       </div>
     </div>
   </div>
-  <div class="card index-card">
-    <h2>数据总量</h2>
-    <div id="index-container" class="index-grid">
-      <div class="index-item" onclick="openBrowse('memory_chunks', '事实碎片')">
-        <div class="num">8874</div>
-        <div>
-          <div class="label">事实碎片</div>
-          <div class="scope">第一层</div>
+  <div class="insight-column">
+    <div class="card index-card">
+      <h2>数据总量</h2>
+      <div id="index-container" class="index-grid">
+        <div class="index-item" onclick="openBrowse('memory_chunks', '事实碎片')">
+          <div class="num">8874</div>
+          <div>
+            <div class="label">事实碎片</div>
+            <div class="scope">第一层</div>
+          </div>
+        </div>
+        <div class="index-item" onclick="openBrowse('wiki_entries', 'Wiki 条目')">
+          <div class="num">216</div>
+          <div>
+            <div class="label">Wiki 条目</div>
+            <div class="scope">第二层</div>
+          </div>
+        </div>
+        <div class="index-item" onclick="openBrowse('hubble_radius', '哈勃半径')">
+          <div class="num">15230</div>
+          <div>
+            <div class="label">哈勃半径</div>
+            <div class="scope">第三层</div>
+          </div>
+        </div>
+        <div class="index-item is-graph" onclick="openBrowse('anda_concepts', '图谱概念')">
+          <div class="num">220</div>
+          <div>
+            <div class="label">图谱概念</div>
+            <div class="scope">知识图谱</div>
+          </div>
+        </div>
+        <div class="index-item is-graph" onclick="openBrowse('anda_propositions', '图谱命题')">
+          <div class="num">530</div>
+          <div>
+            <div class="label">图谱命题</div>
+            <div class="scope">知识图谱</div>
+          </div>
         </div>
       </div>
-      <div class="index-item" onclick="openBrowse('wiki_entries', 'Wiki 条目')">
-        <div class="num">216</div>
-        <div>
-          <div class="label">Wiki 条目</div>
-          <div class="scope">第二层</div>
+    </div>
+
+    <div class="grid chart-grid">
+      <div class="card">
+        <h2>Formation 质量趋势（近 7 天）</h2>
+        <canvas id="formationChart"></canvas>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--text-muted)"></div>
+            <span>原始消息</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--status-green)"></div>
+            <span>有效消息</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--status-red)"></div>
+            <span>过滤噪音</span>
+          </div>
         </div>
+        <div class="chart-note">原始消息是采集到的 AI 对话片段；有效消息是过滤后提交给 Hippocampus 的内容；过滤噪音是被判定为状态回显、工具过程或低信息量的内容。</div>
       </div>
-      <div class="index-item" onclick="openBrowse('hubble_radius', '哈勃半径')">
-        <div class="num">15230</div>
-        <div>
-          <div class="label">哈勃半径</div>
-          <div class="scope">第三层</div>
+      <div class="card">
+        <h2>每日吞吐量</h2>
+        <canvas id="throughputChart"></canvas>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--chart-purple)"></div>
+            <span>第一层切片</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--status-green)"></div>
+            <span>第二层 Wiki</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background: var(--chart-amber)"></div>
+            <span>第三层文章（右轴）</span>
+          </div>
         </div>
-      </div>
-      <div class="index-item is-graph" onclick="openBrowse('anda_concepts', '图谱概念')">
-        <div class="num">220</div>
-        <div>
-          <div class="label">图谱概念</div>
-          <div class="scope">知识图谱</div>
-        </div>
-      </div>
-      <div class="index-item is-graph" onclick="openBrowse('anda_propositions', '图谱命题')">
-        <div class="num">530</div>
-        <div>
-          <div class="label">图谱命题</div>
-          <div class="scope">知识图谱</div>
-        </div>
+        <div class="chart-note">按内容日期统计：第一层按事实碎片日期，第二层按 Wiki 条目更新时间，第三层按文章发布时间。第一层与第二层用左轴柱状图；第三层文章通常数量更大，用右轴折线显示。</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Row 2: Charts -->
-<div class="grid">
-  <div class="card">
-    <h2>Formation 质量趋势（近 7 天）</h2>
-    <canvas id="formationChart"></canvas>
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--text-muted)"></div>
-        <span>原始消息</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-green)"></div>
-        <span>有效消息</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-red)"></div>
-        <span>过滤噪音</span>
-      </div>
-    </div>
-    <div class="chart-note">原始消息是采集到的 AI 对话片段；有效消息是过滤后提交给 Hippocampus 的内容；过滤噪音是被判定为状态回显、工具过程或低信息量的内容。</div>
-  </div>
-  <div class="card">
-    <h2>每日吞吐量</h2>
-    <canvas id="throughputChart"></canvas>
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--chart-purple)"></div>
-        <span>第一层切片</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--status-green)"></div>
-        <span>第二层 Wiki</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background: var(--chart-amber)"></div>
-        <span>第三层文章（右轴）</span>
-      </div>
-    </div>
-    <div class="chart-note">按内容日期统计：第一层按事实碎片日期，第二层按 Wiki 条目更新时间，第三层按文章发布时间。第一层与第二层用左轴柱状图；第三层文章通常数量更大，用右轴折线显示。</div>
-  </div>
-</div>
-
-<!-- Row 3: Data Flow -->
+<!-- Data Flow -->
 <div class="card" style="margin-bottom: 16px;">
   <h2>数据管道动线</h2>
   <div class="flow-container">

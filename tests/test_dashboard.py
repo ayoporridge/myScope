@@ -477,8 +477,11 @@ class DashboardTests(unittest.TestCase):
     def test_dashboard_page_uses_asymmetric_overview_layout(self):
         html = Path("scripts/dashboard_page.html").read_text()
 
-        self.assertIn("overview-layout", html)
-        self.assertIn("grid-template-columns: minmax(320px, 0.72fr) minmax(620px, 1.28fr)", html)
+        self.assertIn("dashboard-main", html)
+        self.assertIn("insight-column", html)
+        self.assertIn("chart-grid", html)
+        self.assertIn("grid-template-columns: minmax(360px, 0.42fr) minmax(680px, 1fr)", html)
+        self.assertIn("grid-template-columns: repeat(5, minmax(0, 1fr))", html)
         self.assertIn("status-summary", html)
         self.assertIn("status-list", html)
         self.assertIn("is-graph", html)
