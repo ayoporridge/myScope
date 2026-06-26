@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.myscope.run-due-jobs</string>
+
+  <key>WorkingDirectory</key>
+  <string>MYSCOPE_DIR</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>PATH_VALUE</string>
+  </dict>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>PYTHON_BIN</string>
+    <string>MYSCOPE_DIR/scripts/run_due_jobs.py</string>
+    <string>--machine</string>
+    <string>macbook</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>StandardOutPath</key>
+  <string>MYSCOPE_DIR/logs/run_due_jobs.log</string>
+  <key>StandardErrorPath</key>
+  <string>MYSCOPE_DIR/logs/run_due_jobs_err.log</string>
+</dict>
+</plist>

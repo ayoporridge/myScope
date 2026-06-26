@@ -14,17 +14,13 @@
 | 06:00 | hippocampus_formation | Codex/Hermes/Clacky → Anda |
 | 06:30 | health_check | 健康检查 → 飞书告警 |
 
-### macbook/ — 开机任务
+### macbook/ — catch-up runner
 
-登录时自动运行一次，脚本内部通过状态文件做增量，不会重复处理。
+登录时运行，并每小时检查一次。实际执行由 `run_due_jobs.py --machine macbook` 判断，不依赖 launchd/cron 补偿错过的固定时间点。
 
-| 脚本 | 说明 |
+| plist | 说明 |
 |------|------|
-| layer1_rag | 微信收藏 + 文件传输助手 + Obsidian → memory_chunks |
-| layer3_wechat | 公众号文章 → hubble_radius |
-| dayflow_sync | Dayflow 屏幕活动 → memory_chunks |
-| dayflow_summary | Dayflow 日摘要 → Anda |
-| hippocampus_formation | Claude/Clacky 会话 → Anda |
+| com.myscope.run-due-jobs | 统一检查并补跑 MacBook 到期任务 |
 
 ## 安装
 
@@ -32,7 +28,7 @@
 # Mac mini 上
 bash launchd/install.sh macmini
 
-# MacBook 上
+# MacBook 上（只安装 run-due-jobs runner）
 bash launchd/install.sh macbook
 ```
 
@@ -57,6 +53,7 @@ done
 # 列出已注册任务
 launchctl list | grep myscope
 
-# 查看日志
-tail -f ~/Documents/myScope/logs/layer1_rag.log
+# 查看日志和统一状态
+tail -f ~/Documents/myScope/logs/run_due_jobs.log
+cat ~/Documents/myScope/logs/job_status.json
 ```

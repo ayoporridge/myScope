@@ -23,6 +23,10 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -119,6 +123,8 @@ def post_formation(date_str: str, summary: str) -> bool:
 
 
 def main():
+    import time
+    start_time = time.time()
     parser = argparse.ArgumentParser(description="Dayflow 日摘要 → Hippocampus")
     parser.add_argument(
         "--date",
@@ -134,6 +140,13 @@ def main():
     rows = fetch_day_observations(date_str)
     if not rows:
         print(f"  {date_str} 无 observations，跳过。")
+        record_last_run("dayflow_daily_summary")
+        record_metrics(
+            "dayflow_daily_summary",
+            observations_summarized=0,
+            formation_success=False,
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
         return
 
     print(f"  读取到 {len(rows)} 条 observations")
@@ -141,8 +154,23 @@ def main():
 
     ok = post_formation(date_str, summary)
     if ok:
+        record_last_run("dayflow_daily_summary")
+        record_metrics(
+            "dayflow_daily_summary",
+            observations_summarized=len(rows),
+            summary_chars=len(summary),
+            formation_success=True,
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
         print(f"[完成] {date_str} 日摘要已提交 Hippocampus（{len(summary)} 字）")
     else:
+        record_metrics(
+            "dayflow_daily_summary",
+            observations_summarized=len(rows),
+            summary_chars=len(summary),
+            formation_success=False,
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
         print(f"[失败] {date_str} 日摘要提交失败")
         exit(1)
 

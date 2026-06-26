@@ -30,12 +30,14 @@
 ┌─────────────────────────────────────────────────────────┐
 │  MacBook（日间使用，每天开机）                             │
 │                                                         │
-│  开机触发（RunAtLoad）：                                  │
-│    layer1_rag.py              微信+Obsidian → memory_chunks│
-│    layer3_wechat.py           公众号文章 → hubble_radius  │
-│    dayflow_sync.py            屏幕活动 → memory_chunks    │
-│    dayflow_daily_summary.py   日摘要 → Anda              │
-│    hippocampus_formation      Claude/Clacky → Anda       │
+│  catch-up runner（登录时 + 每小时检查）：                    │
+│    run_due_jobs.py --machine macbook                     │
+│      dayflow_sync.py            屏幕活动 → memory_chunks  │
+│      layer3_wechat.py           公众号文章 → hubble_radius│
+│      layer1_rag.py              微信+Obsidian → memory_chunks│
+│      hippocampus_formation.py   Claude/Clacky → Anda     │
+│      dayflow_daily_summary.py   日摘要 → Anda            │
+│      layer2_wiki.py             跨层综合 → wiki_entries  │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -144,15 +146,17 @@ bash launchd/install.sh macbook  # 注册开机任务
 | 06:00 | `hippocampus_formation.py` | Codex/Hermes/Clacky → Anda |
 | 06:30 | `health_check.py` | 存活性+质量 → 飞书告警 |
 
-### MacBook（开机触发）
+### MacBook（catch-up runner）
 
-| 脚本 | 数据源 → 目标索引 |
-|------|------------------|
-| `layer1_rag.py` | 微信+Obsidian → `memory_chunks` |
-| `layer3_wechat.py` | 公众号文章 → `hubble_radius` |
-| `dayflow_sync.py` | Dayflow → `memory_chunks` |
-| `dayflow_daily_summary.py` | Dayflow 日摘要 → Anda |
-| `hippocampus_formation.py` | Claude/Clacky → Anda |
+| 触发 | 脚本 | 说明 |
+|------|------|------|
+| 登录时 + 每小时 | `run_due_jobs.py --machine macbook` | 根据 `last_success_at` 补跑到期任务 |
+| 到期时 | `dayflow_sync.py` | Dayflow → `memory_chunks` |
+| 到期时 | `layer3_wechat.py` | 公众号文章 → `hubble_radius` |
+| 到期时 | `layer1_rag.py` | 微信+Obsidian → `memory_chunks` |
+| 到期时 | `hippocampus_formation.py` | Claude/Clacky → Anda |
+| 到期时 | `dayflow_daily_summary.py` | Dayflow 日摘要 → Anda |
+| 到期时 | `layer2_wiki.py` | 跨层综合 → `wiki_entries` |
 
 ---
 
@@ -212,6 +216,10 @@ python3 scripts/hippocampus_formation.py
 
 # 健康检查
 python3 scripts/health_check.py
+
+# 检查并补跑当前机器到期任务
+python3 scripts/run_due_jobs.py --machine macbook --dry-run
+python3 scripts/run_due_jobs.py --machine macbook
 ```
 
 ---
@@ -238,6 +246,10 @@ myScope/
 │   ├── health_check.py             # 健康检查 → 飞书告警
 │   ├── dashboard.py                # Web 状态面板
 │   ├── memory_mcp_server.py        # MCP Server
+│   ├── run_job.py                  # 统一任务包装器（锁/超时/状态）
+│   ├── run_due_jobs.py             # 到期任务补跑器
+│   ├── memory_smoke_test.py        # 记忆入口冒烟测试
+│   ├── source_audit.py             # 哈勃半径源边界审计
 │   ├── subscribe_podcasts.py       # 播客批量订阅工具
 │   └── _metrics.py                 # 运行指标记录（内部模块）
 ├── launchd/
@@ -249,11 +261,7 @@ myScope/
 │   │   ├── com.myscope.hippocampus-formation.plist
 │   │   └── com.myscope.health-check.plist
 │   └── macbook/                    # MacBook 开机任务 plist
-│       ├── com.myscope.layer1-rag.plist
-│       ├── com.myscope.layer3-wechat.plist
-│       ├── com.myscope.dayflow-sync.plist
-│       ├── com.myscope.dayflow-summary.plist
-│       └── com.myscope.hippocampus-formation.plist
+│       └── com.myscope.run-due-jobs.plist
 ├── cloudflare-worker/
 │   └── worker.js                   # Meilisearch API 安全中转
 └── logs/                           # 运行日志 + 指标

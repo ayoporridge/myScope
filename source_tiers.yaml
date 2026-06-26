@@ -1,0 +1,9 @@
+# MyScope source tiers.
+# 这是人为维护的边界配置；未出现的源会在 source_audit 中显示为 uncategorized。
+
+tiers:
+  high-signal: []
+  context-news: []
+  culture-sentiment: []
+  archive-only: []
+  muted: []

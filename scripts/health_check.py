@@ -22,6 +22,10 @@ except ImportError:
     http_requests = None
 
 from dotenv import load_dotenv
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
@@ -36,6 +40,8 @@ METRICS_FILE = LOGS_DIR / "metrics.jsonl"
 
 # 跨机器共享指标目录（git 追踪）
 METRICS_SHARED_DIR = Path(__file__).parent.parent / "data" / "metrics"
+JOB_STATUS_FILE = LOGS_DIR / "job_status.json"
+JOB_STATUS_SHARED_DIR = Path(__file__).parent.parent / "data" / "job_status"
 
 # 飞书告警配置
 FEISHU_WEBHOOK_URL = os.environ.get("FEISHU_WEBHOOK_URL", "")
@@ -115,6 +121,45 @@ def send_feishu_alert(message: str):
 def check_liveness() -> list[str]:
     """检查每个脚本的最后运行时间"""
     alerts = []
+    host_status = {}
+
+    if JOB_STATUS_SHARED_DIR.exists():
+        for path in JOB_STATUS_SHARED_DIR.glob("*.json"):
+            try:
+                host_status[path.stem] = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+    if JOB_STATUS_FILE.exists():
+        try:
+            for host, jobs in json.loads(JOB_STATUS_FILE.read_text()).items():
+                host_status[host] = {**host_status.get(host, {}), **jobs}
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    if host_status:
+        now = datetime.now()
+        threshold = timedelta(hours=LIVENESS_THRESHOLD_HOURS)
+        for host, jobs in host_status.items():
+            for script in MONITORED_SCRIPTS:
+                info = jobs.get(script)
+                if not info:
+                    continue
+                last_run_str = info.get("last_success_at") or info.get("last_finished_at")
+                if not last_run_str:
+                    alerts.append(f"🔴 `{host}` `{script}` 无成功运行记录")
+                    continue
+                try:
+                    last_run = datetime.fromisoformat(last_run_str)
+                    gap = now - last_run
+                    if gap > threshold:
+                        hours_ago = round(gap.total_seconds() / 3600, 1)
+                        alerts.append(f"🔴 `{host}` `{script}` 已 {hours_ago}h 未成功运行（上次：{last_run_str}）")
+                    if info.get("status") == "failure":
+                        err = info.get("last_error_summary", "")
+                        alerts.append(f"🔴 `{host}` `{script}` 最近失败：{err}")
+                except (ValueError, TypeError):
+                    alerts.append(f"⚠️ `{host}` `{script}` 时间格式异常：{last_run_str}")
+        return alerts
 
     if not LAST_RUN_FILE.exists():
         return ["⚠️ `last_run.json` 不存在，所有脚本可能从未成功运行过"]
@@ -260,6 +305,7 @@ def check_quality() -> list[str]:
 
 # ── 主流程 ────────────────────────────────────────────────
 def main():
+    started = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] MyScope 健康检查")
     print(f"  监控列表: {MONITORED_SCRIPTS}")
 
@@ -292,6 +338,14 @@ def main():
         else:
             print("  全部正常，无需推送")
 
+    record_last_run("health_check")
+    record_metrics(
+        "health_check",
+        alerts=len(all_alerts),
+        liveness_alerts=len(liveness_alerts),
+        quality_alerts=len(quality_alerts),
+        run_duration_seconds=round(time.time() - started, 1),
+    )
     print("[完成] 健康检查结束")
 
 

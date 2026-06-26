@@ -15,6 +15,10 @@ import requests
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 # 加载 .env
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -23,7 +27,7 @@ FRESHRSS_URL      = os.environ["FRESHRSS_URL"]
 FRESHRSS_USERNAME = os.environ["FRESHRSS_USERNAME"]
 FRESHRSS_API_PASS = os.environ["FRESHRSS_API_PASSWORD"]
 MEMORY_URL        = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
-MEMORY_TOKEN      = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_TOKEN      = os.environ.get("MEMORY_API_TOKEN", "")
 INDEX_NAME        = "hubble_radius"
 
 # ── memory-api 写入 ───────────────────────────────────────
@@ -116,6 +120,7 @@ def save_state(state):
 
 # ── 主流程 ────────────────────────────────────────────────
 def main():
+    started = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始同步 FreshRSS → Meilisearch")
 
     auth = freshrss_auth()
@@ -155,6 +160,12 @@ def main():
 
     # 保存状态（下次增量同步用）
     save_state({"freshrss_continuation": None, "last_sync": datetime.now().isoformat()})
+    record_last_run("layer3_index")
+    record_metrics(
+        "layer3_index",
+        documents_indexed=total,
+        run_duration_seconds=round(time.time() - started, 1),
+    )
 
     print(f"[完成] 共处理 {total} 条文档")
 

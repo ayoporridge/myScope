@@ -18,6 +18,8 @@ layer2_wiki.py
 每天凌晨 5:30 运行（第一层跑完后）
 """
 
+from __future__ import annotations
+
 import os
 import json
 import re
@@ -28,13 +30,16 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
-from _metrics import record_last_run, record_metrics
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
-MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
 # Anda 海马体
 ANDA_BASE_URL    = os.environ.get("ANDA_BASE_URL", "https://hippocampus.arjo.us.ci")
@@ -54,6 +59,44 @@ llm = OpenAI(api_key=XIAOMI_KEY, base_url="https://token-plan-cn.xiaomimimo.com/
 
 
 # ── 从 Meilisearch 读取最近切片（Layer 1）───────────────────
+def parse_doc_datetime(item: dict) -> datetime | None:
+    """Best-effort timestamp parsing across old/new memory schemas."""
+    for key in ("created_at", "updated_at", "indexed_at", "published_at", "date", "timestamp"):
+        value = item.get(key)
+        if not value:
+            continue
+        if isinstance(value, (int, float)):
+            try:
+                return datetime.fromtimestamp(value)
+            except (OSError, ValueError):
+                continue
+        text = str(value).strip()
+        if not text:
+            continue
+        try:
+            return datetime.fromisoformat(text.replace("Z", "+00:00")).replace(tzinfo=None)
+        except ValueError:
+            pass
+        for fmt in ("%Y-%m-%d", "%Y/%m/%d"):
+            try:
+                return datetime.strptime(text[:10], fmt)
+            except ValueError:
+                continue
+    return None
+
+
+def filter_recent_chunks(chunks: list[dict], *, now: datetime | None = None, hours: int = 25) -> list[dict]:
+    """Keep recent chunks; retain unknown-date docs as a compatibility fallback."""
+    now = now or datetime.now()
+    cutoff = now.timestamp() - hours * 3600
+    recent = []
+    for item in chunks:
+        dt = parse_doc_datetime(item)
+        if dt is None or dt.timestamp() >= cutoff:
+            recent.append(item)
+    return recent
+
+
 def get_recent_chunks() -> list[dict]:
     """获取 memory_chunks 中最近 25 小时的切片"""
     try:
@@ -66,20 +109,7 @@ def get_recent_chunks() -> list[dict]:
         r.raise_for_status()
         data = r.json()
         results = data.get("results", [])
-        cutoff = (datetime.now().timestamp() - 25 * 3600)
-        recent = []
-        for item in results:
-            created = item.get("created_at", "")
-            if created:
-                try:
-                    ts = datetime.fromisoformat(created.replace("Z", "+00:00")).timestamp()
-                    if ts >= cutoff:
-                        recent.append(item)
-                        continue
-                except (ValueError, TypeError):
-                    pass
-            recent.append(item)
-        return recent
+        return filter_recent_chunks(results)
     except Exception as e:
         print(f"  [读取 memory_chunks 失败] {e}")
         return []
@@ -88,23 +118,42 @@ def get_recent_chunks() -> list[dict]:
 # ── 从 Layer 1 切片中提取关键词 ─────────────────────────────
 def extract_topics(chunks: list[dict]) -> list[str]:
     """从今日切片中提取主题关键词，用于在哈勃半径中搜索相关内容"""
-    # 收集所有 keywords
     all_keywords = []
+    stopwords = {
+        "今天", "继续", "需要", "相关", "内容", "系统", "用户", "进行", "查看",
+        "the", "and", "for", "with", "from", "that", "this", "need",
+    }
     for c in chunks:
         kw = c.get("keywords", [])
         if isinstance(kw, list):
             all_keywords.extend(kw)
-        # 也从 title/summary 中取
-        title = c.get("title", c.get("summary", ""))
-        if title:
-            all_keywords.append(title)
+        for key in ("title", "summary", "source"):
+            value = c.get(key, "")
+            if value:
+                all_keywords.append(str(value))
+        text = c.get("content") or c.get("text") or c.get("digest") or ""
+        all_keywords.extend(re.findall(r"[A-Za-z][A-Za-z0-9_-]{2,}", text))
+        all_keywords.extend(re.findall(r"[\u4e00-\u9fff]{2,8}", text))
 
-    # 去重，取出现频率最高的关键词（最多 5 个搜索词）
     from collections import Counter
-    counts = Counter(all_keywords)
-    # 过滤太短或太通用的
+    normalized = []
+    for word in all_keywords:
+        word = str(word).strip().strip("：:，,。.!?、[]()（）").lower()
+        if len(word) < 2 or word in stopwords:
+            continue
+        normalized.append(word)
+    counts = Counter(normalized)
     meaningful = [(w, n) for w, n in counts.items() if len(w) >= 2]
-    top = sorted(meaningful, key=lambda x: -x[1])[:5]
+    top = sorted(
+        meaningful,
+        key=lambda x: (
+            -(
+                x[1]
+                + (3 if any(term in x[0] for term in ("myscope", "hubble", "哈勃", "dashboard", "hippocampus", "海马")) else 0)
+            ),
+            x[0],
+        ),
+    )[:5]
     return [w for w, _ in top]
 
 
@@ -179,9 +228,23 @@ def get_existing_wiki_titles() -> list[str]:
         )
         r.raise_for_status()
         results = r.json().get("results", [])
-        return [item.get("title", "") for item in results if item.get("title")]
+        return extract_wiki_titles(results)
     except Exception:
         return []
+
+
+def extract_wiki_titles(results: list[dict]) -> list[str]:
+    """Extract titles from rich or flattened wiki search results."""
+    titles = []
+    seen = set()
+    for item in results:
+        raw = item.get("title") or item.get("summary") or item.get("text") or item.get("content") or ""
+        title = str(raw).strip().splitlines()[0].strip()
+        title = re.split(r"[：:]", title, maxsplit=1)[0].strip()
+        if title and title not in seen:
+            seen.add(title)
+            titles.append(title[:40])
+    return titles
 
 
 # ── LLM Wiki 归纳（跨层综合）───────────────────────────────
@@ -221,7 +284,7 @@ WIKI_PROMPT = """\
 def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: list[str], hippocampus_text: str = "") -> list[dict]:
     """用 LLM 跨层归纳 Wiki 条目"""
     chunks_text = "\n".join(
-        f"- {c.get('content', c.get('text', ''))}"
+        f"- {c.get('content') or c.get('text') or c.get('digest') or ''}"
         for c in chunks[:50]
     )
 
@@ -229,9 +292,11 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
     if hubble_results:
         hubble_lines = []
         for h in hubble_results:
-            title = h.get("title", "")
-            content = h.get("content", h.get("digest", ""))[:200]
+            title = h.get("title") or ""
+            content = (h.get("content") or h.get("digest") or h.get("text") or "")[:200]
             source = h.get("source", h.get("author", ""))
+            if not title:
+                title = content[:40]
             hubble_lines.append(f"- [{source}] {title}: {content}")
         hubble_text = "\n".join(hubble_lines)
     else:
@@ -351,7 +416,13 @@ def main():
         "layer2_wiki",
         new_chunks_processed=len(chunks),
         hubble_results=len(hubble_results),
+        topics_extracted_count=len(topics),
         topics_extracted=topics,
+        hippocampus_context_chars=len(hippocampus_text or ""),
+        wiki_create_count=sum(1 for op in operations if op.get("action") == "create"),
+        wiki_update_count=sum(1 for op in operations if op.get("action") == "update"),
+        personal_hubble_count=sum(1 for op in operations if "hubble" in str(op.get("sources", "")).lower() or "哈勃" in str(op.get("sources", ""))),
+        personal_only_count=sum(1 for op in operations if "hubble" not in str(op.get("sources", "")).lower() and "哈勃" not in str(op.get("sources", ""))),
         wiki_entries_written=len(operations),
         run_duration_seconds=round(time.time() - start_time, 1),
     )

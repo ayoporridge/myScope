@@ -24,7 +24,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
-MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
 llm = OpenAI(api_key=XIAOMI_KEY, base_url="https://token-plan-cn.xiaomimimo.com/v1")
 

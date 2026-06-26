@@ -16,7 +16,7 @@ from mcp.server.stdio import stdio_server
 from mcp import types
 
 MEMORY_API_BASE = os.getenv("MEMORY_API_BASE", "https://memory.arjo.us.ci")
-MEMORY_API_TOKEN = os.getenv("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_API_TOKEN = os.getenv("MEMORY_API_TOKEN", "")
 
 HEADERS = {"Authorization": f"Bearer {MEMORY_API_TOKEN}"}
 

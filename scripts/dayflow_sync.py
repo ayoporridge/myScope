@@ -30,7 +30,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 DAYFLOW_DB   = Path.home() / "Library/Application Support/Dayflow/chunks.sqlite"
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
-MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 INDEX        = "memory_chunks"
 BATCH_SIZE   = 200
 STATE_FILE   = Path.home() / ".dayflow_sync_state.json"

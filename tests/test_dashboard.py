@@ -127,6 +127,11 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual("success", status["hosts"]["mini"]["layer1_flomo"]["status"])
             self.assertEqual("2026-06-24T04:31:26", status["hosts"]["mini"]["layer1_flomo"]["last_success_at"])
 
+    def test_status_color_uses_script_expected_interval(self):
+        self.assertEqual("green", self.dashboard._script_status_color("memory_smoke_test", "success", 47.5))
+        self.assertEqual("red", self.dashboard._script_status_color("dayflow_sync", "success", 47.5))
+        self.assertEqual("red", self.dashboard._script_status_color("memory_smoke_test", "failure", 1))
+
     def test_browse_index_prefers_meili_documents_sorted_by_freshness(self):
         class Response:
             status_code = 200

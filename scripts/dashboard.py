@@ -51,6 +51,21 @@ LOCAL_HOSTNAME = socket.gethostname().split(".")[0]
 BROWSE_FETCH_PAGE_SIZE = 1000
 BROWSE_FETCH_CAP = 20000
 
+EXPECTED_SCRIPT_INTERVAL_HOURS = {
+    "dayflow_sync": 6,
+    "layer1_flomo": 20,
+    "layer1_rag": 20,
+    "layer2_wiki": 20,
+    "layer3_index": 20,
+    "layer3_wechat": 20,
+    "hippocampus_formation": 20,
+    "dayflow_daily_summary": 20,
+    "health_check": 20,
+    "run_due_jobs": 20,
+    "memory_smoke_test": 168,
+    "source_audit": 720,
+}
+
 INDEX_META = {
     "memory_chunks": {
         "title": "事实碎片",
@@ -115,6 +130,17 @@ def _last_run_jobs(data: dict) -> dict:
     return jobs
 
 
+def _script_status_color(name: str, status: str | None, hours_ago: float) -> str:
+    if status == "failure" or hours_ago < 0:
+        return "red"
+    interval = EXPECTED_SCRIPT_INTERVAL_HOURS.get(name, 24)
+    if hours_ago <= interval * 1.25:
+        return "green"
+    if hours_ago <= interval * 2:
+        return "amber"
+    return "red"
+
+
 def get_status() -> dict:
     """脚本存活状态"""
     now = datetime.now()
@@ -154,14 +180,7 @@ def get_status() -> dict:
                     try:
                         last = datetime.fromisoformat(last_str)
                         hours_ago = round((now - last).total_seconds() / 3600, 1)
-                        if info.get("status") == "failure":
-                            color = "red"
-                        elif hours_ago < 25:
-                            color = "green"
-                        elif hours_ago < 48:
-                            color = "amber"
-                        else:
-                            color = "red"
+                        color = _script_status_color(name, info.get("status"), hours_ago)
                     except Exception:
                         color = "red"
                 normalized = {

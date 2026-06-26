@@ -7,6 +7,8 @@ layer3_wechat.py
 触发方式：开机自动运行（launchd RunAtLoad）
 """
 
+from __future__ import annotations
+
 import os
 import json
 import hashlib
@@ -16,12 +18,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 import requests
-from _metrics import record_last_run, record_metrics
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
-MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "memory-api-token-2026")
+MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 INDEX_NAME   = "hubble_radius"
 
 OPENCLI = "/Users/xz/.local/nodejs/bin/opencli"
@@ -49,14 +54,14 @@ def save_state(state: dict):
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
 
 
-def fetch_articles(since: str, limit: int = 500) -> list[dict]:
+def fetch_articles(since: str, limit: int = 500) -> list[dict] | None:
     """调用 opencli wx biz-articles 获取文章列表"""
     cmd = [OPENCLI, "wx", "biz-articles", "--json", "--limit", str(limit), "--since", since]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         if result.returncode != 0:
             print(f"  [错误] opencli 返回 {result.returncode}: {result.stderr[:200]}")
-            return []
+            return None
         # 输出可能包含尾部的 "Update available" 提示，只取 JSON 部分
         output = result.stdout.strip()
         # 找到 JSON 数组的起止
@@ -64,14 +69,14 @@ def fetch_articles(since: str, limit: int = 500) -> list[dict]:
         end = output.rfind("]")
         if start == -1 or end == -1:
             print("  [警告] 无有效 JSON 输出")
-            return []
+            return None
         return json.loads(output[start:end + 1])
     except subprocess.TimeoutExpired:
         print("  [超时] opencli 执行超过 60s")
-        return []
+        return None
     except Exception as e:
         print(f"  [异常] {e}")
-        return []
+        return None
 
 
 def push_to_meilisearch(docs: list[dict]):
@@ -128,6 +133,12 @@ def main():
 
     # 拉取全量文章
     articles = fetch_articles(since=since, limit=1000)
+    if articles is None:
+        print("  拉取失败，不推进 state")
+        record_metrics("layer3_wechat", articles_indexed=0, fetch_failed=True,
+                       run_duration_seconds=round(time.time() - start_time, 1))
+        raise SystemExit(1)
+
     if not articles:
         print("  无新文章")
         save_state({"last_run_date": datetime.now().strftime("%Y-%m-%d")})
