@@ -132,6 +132,68 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual("red", self.dashboard._script_status_color("dayflow_sync", "success", 47.5))
         self.assertEqual("red", self.dashboard._script_status_color("memory_smoke_test", "failure", 1))
 
+    def test_content_date_prefers_domain_specific_fields(self):
+        self.assertEqual(
+            "2026-06-25",
+            self.dashboard._doc_content_date(
+                {"date": "2026-06-25", "created_at": "2026-06-26T09:00:00"},
+                "memory_chunks",
+            ),
+        )
+        self.assertEqual(
+            "2026-06-24",
+            self.dashboard._doc_content_date(
+                {"updated_at": "2026-06-24T05:31:28", "created_at": "2026-06-20T09:00:00"},
+                "wiki_entries",
+            ),
+        )
+        self.assertEqual(
+            "2026-06-23",
+            self.dashboard._doc_content_date(
+                {"published_at": "2026-06-23 00:00", "indexed_at": "2026-06-26T13:51:37"},
+                "hubble_radius",
+            ),
+        )
+
+    def test_content_throughput_aggregates_by_document_date(self):
+        docs = {
+            "memory_chunks": [
+                {"date": "2026-06-25"},
+                {"date": "2026-06-25"},
+                {"created_at": "2026-06-26T09:00:00"},
+            ],
+            "wiki_entries": [
+                {"updated_at": "2026-06-25T05:31:30"},
+                {"updated_at": "2026-06-26T05:31:28"},
+            ],
+            "hubble_radius": [
+                {"published_at": "2026-06-25 00:00"},
+                {"published_at": "2026-06-26 00:00"},
+                {"indexed_at": "2026-06-26T13:51:37"},
+            ],
+        }
+
+        original_fetch = self.dashboard._fetch_meili_documents
+        original_range = self.dashboard._date_range
+        self.dashboard._CONTENT_THROUGHPUT_CACHE.clear()
+        self.dashboard._fetch_meili_documents = lambda index, headers: (docs[index], len(docs[index]))
+        self.dashboard._date_range = lambda days: ["2026-06-25", "2026-06-26"]
+        try:
+            data = self.dashboard.get_content_throughput(2)
+        finally:
+            self.dashboard._fetch_meili_documents = original_fetch
+            self.dashboard._date_range = original_range
+            self.dashboard._CONTENT_THROUGHPUT_CACHE.clear()
+
+        self.assertTrue(data["ok"])
+        self.assertEqual(
+            [
+                {"date": "2026-06-25", "layer1": 2, "layer2": 1, "layer3": 1},
+                {"date": "2026-06-26", "layer1": 1, "layer2": 1, "layer3": 2},
+            ],
+            data["rows"],
+        )
+
     def test_browse_index_prefers_meili_documents_sorted_by_freshness(self):
         class Response:
             status_code = 200
@@ -391,9 +453,10 @@ class DashboardTests(unittest.TestCase):
     def test_dashboard_page_counts_layer3_index_documents_as_articles(self):
         html = Path("scripts/dashboard_page.html").read_text()
 
-        self.assertIn("'documents_indexed'", html)
-        self.assertIn("byDate[d].layer3_index?.documents_indexed", html)
-        self.assertIn("byDate[d].layer1_flomo?.chunks", html)
+        self.assertIn("/api/content-throughput?days=7", html)
+        self.assertIn("throughputRows.map(row => row.layer1", html)
+        self.assertIn("throughputRows.map(row => row.layer2", html)
+        self.assertIn("throughputRows.map(row => row.layer3", html)
 
     def test_dashboard_page_uses_infinite_modal_loading_and_right_axis_articles(self):
         html = Path("scripts/dashboard_page.html").read_text()

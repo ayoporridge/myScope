@@ -50,6 +50,8 @@ ANDA_DATA_DIR = Path(os.environ.get("ANDA_DATA_DIR", str(Path.home() / "anda-dat
 LOCAL_HOSTNAME = socket.gethostname().split(".")[0]
 BROWSE_FETCH_PAGE_SIZE = 1000
 BROWSE_FETCH_CAP = 20000
+CONTENT_THROUGHPUT_CACHE_TTL_SECONDS = 300
+_CONTENT_THROUGHPUT_CACHE: dict[int, tuple[float, dict]] = {}
 
 EXPECTED_SCRIPT_INTERVAL_HOURS = {
     "dayflow_sync": 6,
@@ -73,7 +75,7 @@ INDEX_META = {
         "summary": "这里保存的是较短的个人事实记录，适合回答“我最近做过什么、看过什么、讨论过什么”。",
         "sources": ["Dayflow", "微信", "企业微信", "Obsidian", "flomo"],
         "pipeline": "MacBook 的 dayflow_sync/layer1_rag 与 Mac mini 的 layer1_flomo 写入 memory_chunks。",
-        "stat_logic": "总量来自 Meilisearch memory_chunks 文档数；每日吞吐中的第一层切片 = layer1_rag.chunks_produced + layer1_flomo.chunks。",
+        "stat_logic": "总量来自 Meilisearch memory_chunks 文档数；每日吞吐按文档内容日期统计 memory_chunks 条数。",
     },
     "wiki_entries": {
         "title": "Wiki 条目",
@@ -81,7 +83,7 @@ INDEX_META = {
         "summary": "这里保存的是 LLM 从事实碎片中归纳出的结构化知识条目，比事实碎片更像主题笔记。",
         "sources": ["memory_chunks", "hubble_radius", "Hippocampus recall"],
         "pipeline": "layer2_wiki 读取近期事实碎片，抽取主题，检索哈勃半径，并尝试召回 Hippocampus 背景后生成条目。",
-        "stat_logic": "总量来自 Meilisearch wiki_entries 文档数；每日吞吐中的第二层 Wiki = layer2_wiki.wiki_entries_written。",
+        "stat_logic": "总量来自 Meilisearch wiki_entries 文档数；每日吞吐按 Wiki 条目的 updated_at/created_at 统计当前条目的内容日期。",
     },
     "hubble_radius": {
         "title": "哈勃半径",
@@ -89,7 +91,7 @@ INDEX_META = {
         "summary": "这里保存外部信息宇宙，包括 RSS、播客、公众号文章，适合回答“我关注的信息源里有没有相关内容”。",
         "sources": ["FreshRSS", "公众号文章", "播客/RSS"],
         "pipeline": "Mac mini 的 layer3_index 写入 FreshRSS/RSS，MacBook 的 layer3_wechat 写入公众号文章。",
-        "stat_logic": "总量来自 Meilisearch hubble_radius 文档数；每日吞吐中的第三层文章 = layer3_wechat.articles_indexed + layer3_index.documents_indexed。",
+        "stat_logic": "总量来自 Meilisearch hubble_radius 文档数；每日吞吐按文章 published_at/date 统计外部内容日期。",
     },
     "anda_concepts": {
         "title": "图谱概念",
@@ -416,6 +418,81 @@ def _fetch_meili_documents(index: str, headers: dict) -> tuple[list[dict], int] 
         if len(docs) >= total:
             break
     return docs, total if total is not None else len(docs)
+
+
+def _date_range(days: int, *, now: datetime | None = None) -> list[str]:
+    now = now or datetime.now()
+    start = now.date() - timedelta(days=max(days, 1) - 1)
+    return [(start + timedelta(days=i)).isoformat() for i in range(max(days, 1))]
+
+
+def _doc_content_date(doc: dict, index: str) -> str:
+    fields_by_index = {
+        "memory_chunks": ("date", "start_ts", "end_ts", "created_at", "timestamp", "indexed_at"),
+        "wiki_entries": ("updated_at", "created_at", "date", "timestamp"),
+        "hubble_radius": ("published_at", "date", "created_at", "timestamp", "indexed_at"),
+    }
+    fields = fields_by_index.get(index, ("date", "updated_at", "created_at", "published_at", "timestamp"))
+    metadata = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
+    for field in fields:
+        for value in (doc.get(field), metadata.get(field)):
+            parsed = _parse_doc_time(value)
+            if parsed != datetime.min:
+                return parsed.date().isoformat()
+    return ""
+
+
+def get_content_throughput(days: int = 7) -> dict:
+    """按内容日期聚合每日吞吐量，而不是按脚本执行日期聚合。"""
+    days = max(1, min(days, 60))
+    now_ts = time.time()
+    cached = _CONTENT_THROUGHPUT_CACHE.get(days)
+    if cached and now_ts - cached[0] < CONTENT_THROUGHPUT_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    dates = _date_range(days)
+    date_set = set(dates)
+    rows = {date: {"date": date, "layer1": 0, "layer2": 0, "layer3": 0} for date in dates}
+    headers = {"Authorization": f"Bearer {MEILI_KEY}", "Content-Type": "application/json"}
+    sources = {
+        "layer1": {"index": "memory_chunks", "field": "date/start_ts/created_at", "documents_seen": 0, "missing_date": 0},
+        "layer2": {"index": "wiki_entries", "field": "updated_at/created_at", "documents_seen": 0, "missing_date": 0},
+        "layer3": {"index": "hubble_radius", "field": "published_at/date", "documents_seen": 0, "missing_date": 0},
+    }
+    errors = {}
+
+    for layer, index in (("layer1", "memory_chunks"), ("layer2", "wiki_entries"), ("layer3", "hubble_radius")):
+        try:
+            fetched = _fetch_meili_documents(index, headers)
+        except Exception as exc:
+            fetched = None
+            errors[index] = str(exc)[:200]
+        if not fetched:
+            errors.setdefault(index, "fetch failed")
+            continue
+        docs, total = fetched
+        sources[layer]["documents_seen"] = len(docs)
+        sources[layer]["total"] = total
+        for doc in docs:
+            content_date = _doc_content_date(doc, index)
+            if not content_date:
+                sources[layer]["missing_date"] += 1
+                continue
+            if content_date in date_set:
+                rows[content_date][layer] += 1
+
+    result = {
+        "ok": not errors,
+        "mode": "content_date",
+        "days": days,
+        "dates": dates,
+        "rows": [rows[date] for date in dates],
+        "sources": sources,
+        "errors": errors,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    _CONTENT_THROUGHPUT_CACHE[days] = (now_ts, result)
+    return result
 
 
 def _browse_meili_documents(index: str, query: str, limit: int, offset: int = 0) -> dict | None:
@@ -1083,6 +1160,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif path == "/api/metrics":
             days = int(params.get("days", [7])[0])
             self._json_response(get_metrics(days))
+        elif path == "/api/content-throughput":
+            days = int(params.get("days", [7])[0])
+            self._json_response(get_content_throughput(days))
         elif path == "/api/indexes":
             self._json_response(get_indexes())
         elif path == "/api/browse":

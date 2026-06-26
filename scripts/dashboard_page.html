@@ -675,7 +675,7 @@ canvas {
         <span>第三层文章（右轴）</span>
       </div>
     </div>
-    <div class="chart-note">第一层切片与第二层 Wiki 用左轴柱状图；第三层文章通常数量更大，用右轴折线显示。</div>
+    <div class="chart-note">按内容日期统计：第一层按事实碎片日期，第二层按 Wiki 条目更新时间，第三层按文章发布时间。第一层与第二层用左轴柱状图；第三层文章通常数量更大，用右轴折线显示。</div>
   </div>
 </div>
 
@@ -839,7 +839,7 @@ function renderIndexes(data) {
 let formationChart = null;
 let throughputChart = null;
 
-function renderCharts(metrics) {
+function renderCharts(metrics, throughput) {
   const byDate = {};
   metrics.forEach(m => {
     if (!byDate[m.date]) byDate[m.date] = {};
@@ -850,6 +850,14 @@ function renderCharts(metrics) {
     });
   });
   const dates = Object.keys(byDate).sort();
+  const throughputRows = (throughput && Array.isArray(throughput.rows) && throughput.rows.length)
+    ? throughput.rows
+    : dates.map(d => ({
+        date: d,
+        layer1: (byDate[d].layer1_rag?.chunks_produced || 0) + (byDate[d].layer1_flomo?.chunks || 0),
+        layer2: byDate[d].layer2_wiki?.wiki_entries_written || 0,
+        layer3: (byDate[d].layer3_wechat?.articles_indexed || 0) + (byDate[d].layer3_index?.documents_indexed || 0),
+      }));
 
   Chart.defaults.font.family = "'Inter', sans-serif";
   Chart.defaults.color = '#8f8f8f';
@@ -939,11 +947,11 @@ function renderCharts(metrics) {
   // 每日吞吐
   const ctx2 = document.getElementById('throughputChart').getContext('2d');
   const tpData = {
-    labels: dates.map(d => d.slice(5)),
+    labels: throughputRows.map(row => row.date.slice(5)),
     datasets: [
       { 
         label: '第一层切片', 
-        data: dates.map(d => (byDate[d].layer1_rag?.chunks_produced || 0) + (byDate[d].layer1_flomo?.chunks || 0)), 
+        data: throughputRows.map(row => row.layer1 || 0),
         backgroundColor: 'rgba(160,0,248,0.75)',
         borderColor: '#a000f8',
         borderWidth: 1,
@@ -952,7 +960,7 @@ function renderCharts(metrics) {
       },
       { 
         label: '第二层 Wiki', 
-        data: dates.map(d => byDate[d].layer2_wiki?.wiki_entries_written || 0), 
+        data: throughputRows.map(row => row.layer2 || 0),
         backgroundColor: 'rgba(40,169,72,0.75)',
         borderColor: '#28a948',
         borderWidth: 1,
@@ -962,7 +970,7 @@ function renderCharts(metrics) {
       { 
         type: 'line',
         label: '第三层文章（右轴）', 
-        data: dates.map(d => (byDate[d].layer3_wechat?.articles_indexed || 0) + (byDate[d].layer3_index?.documents_indexed || 0)), 
+        data: throughputRows.map(row => row.layer3 || 0),
         backgroundColor: 'rgba(255,174,0,0.12)',
         borderColor: '#ffae00',
         pointBackgroundColor: '#ffae00',
@@ -1023,14 +1031,15 @@ function renderCharts(metrics) {
 
 async function refresh() {
   try {
-    const [status, metrics, indexes] = await Promise.all([
+    const [status, metrics, indexes, throughput] = await Promise.all([
       fetchJSON('/api/status'),
       fetchJSON('/api/metrics?days=7'),
       fetchJSON('/api/indexes'),
+      fetchJSON('/api/content-throughput?days=7'),
     ]);
     renderStatus(status);
     renderIndexes(indexes);
-    renderCharts(metrics);
+    renderCharts(metrics, throughput);
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-CN');
   } catch (e) {
     console.error('刷新失败:', e);
