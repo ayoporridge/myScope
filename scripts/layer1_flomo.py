@@ -22,11 +22,11 @@ from _metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
+DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
-llm = OpenAI(api_key=XIAOMI_KEY, base_url="https://token-plan-cn.xiaomimimo.com/v1")
+llm = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
 
 # Mac mini 上 opencli 路径（根据实际安装位置调整）
 OPENCLI = os.environ.get("OPENCLI_PATH", "/usr/local/bin/opencli")
@@ -158,7 +158,7 @@ def slice_text(text: str) -> list[dict]:
         return []
     try:
         resp = llm.chat.completions.create(
-            model="mimo-v2.5",
+            model="deepseek-chat",
             messages=[{
                 "role": "user",
                 "content": SLICE_PROMPT.format(text=text[:3000], max_chars=CHUNK_MAX)

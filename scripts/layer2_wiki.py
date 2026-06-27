@@ -37,7 +37,7 @@ except ImportError:  # pragma: no cover - package import path for tests
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-XIAOMI_KEY   = os.environ["XIAOMI_API_KEY"]
+DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
@@ -55,7 +55,7 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-llm = OpenAI(api_key=XIAOMI_KEY, base_url="https://token-plan-cn.xiaomimimo.com/v1")
+llm = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
 
 
 # ── 从 Meilisearch 读取最近切片（Layer 1）───────────────────
@@ -310,7 +310,7 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
 
     try:
         resp = llm.chat.completions.create(
-            model="mimo-v2.5",
+            model="deepseek-chat",
             messages=[{
                 "role": "user",
                 "content": WIKI_PROMPT.format(
