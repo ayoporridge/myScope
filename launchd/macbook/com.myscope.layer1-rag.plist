@@ -12,8 +12,7 @@
   <string>com.myscope.layer1-rag</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/bin/env</string>
-    <string>python3</string>
+    <string>PYTHON_BIN</string>
     <string>MYSCOPE_DIR/scripts/layer1_rag.py</string>
   </array>
   <key>WorkingDirectory</key>
@@ -21,7 +20,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
-    <string>/Users/xz/.local/nodejs/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <string>PATH_VALUE</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>

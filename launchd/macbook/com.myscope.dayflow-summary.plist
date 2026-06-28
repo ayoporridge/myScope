@@ -12,12 +12,16 @@
   <string>com.myscope.dayflow-summary</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/bin/env</string>
-    <string>python3</string>
+    <string>PYTHON_BIN</string>
     <string>MYSCOPE_DIR/scripts/dayflow_daily_summary.py</string>
   </array>
   <key>WorkingDirectory</key>
   <string>MYSCOPE_DIR</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>PATH_VALUE</string>
+  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>StandardOutPath</key>
