@@ -3,7 +3,7 @@
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Mac mini 定时任务：第一层 flomo 采集
-  flomo 网页 → Xiaomi mimo 切片 → Meilisearch memory_chunks
+  flomo 网页 → DeepSeek 切片 → Meilisearch memory_chunks
   每天 04:30 运行
 -->
 <plist version="1.0">

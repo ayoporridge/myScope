@@ -2,7 +2,7 @@
 """
 layer1_flomo.py
 第一层补充：flomo 采集（Mac mini 端）
-opencli browser 自动化 → Xiaomi mimo 切片 → Meilisearch memory_chunks
+opencli browser 自动化 → DeepSeek 切片 → Meilisearch memory_chunks
 每天凌晨 4:30 运行（MacBook L1 之前）
 部署位置：Mac mini ~/Documents/myScope/scripts/
 """
@@ -23,10 +23,12 @@ from _metrics import record_last_run, record_metrics
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
-llm = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
+llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
 # Mac mini 上 opencli 路径（根据实际安装位置调整）
 OPENCLI = os.environ.get("OPENCLI_PATH", "/usr/local/bin/opencli")
@@ -158,7 +160,7 @@ def slice_text(text: str) -> list[dict]:
         return []
     try:
         resp = llm.chat.completions.create(
-            model="deepseek-chat",
+            model=DEEPSEEK_MODEL,
             messages=[{
                 "role": "user",
                 "content": SLICE_PROMPT.format(text=text[:3000], max_chars=CHUNK_MAX)

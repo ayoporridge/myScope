@@ -3,7 +3,7 @@
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Mac mini 定时任务：第二层 LLM Wiki
-  Meilisearch memory_chunks → Xiaomi mimo 归纳 → Meilisearch wiki_entries
+  Meilisearch memory_chunks → DeepSeek 归纳 → Meilisearch wiki_entries
   每天 05:30 运行（layer1 跑完后）
 -->
 <plist version="1.0">

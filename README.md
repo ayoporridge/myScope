@@ -3,8 +3,8 @@
 个人三层记忆系统 + 海马体。Mac mini（24/7）+ MacBook（日间使用）双机协作。
 
 ```
-第一层  事实记忆   微信/Obsidian/flomo/Dayflow → Xiaomi mimo 切片 → Meilisearch
-第二层  结构记忆   Layer 1 切片 + Layer 3 半径 → Xiaomi mimo 跨层综合 → Meilisearch
+第一层  事实记忆   微信/Obsidian/flomo/Dayflow → DeepSeek 切片 → Meilisearch
+第二层  结构记忆   Layer 1 切片 + Layer 3 半径 → DeepSeek 跨层综合 → Meilisearch
 第三层  半径记忆   FreshRSS + 公众号文章 → 直接索引 → Meilisearch
 海马体  对话记忆   Claude/Codex/Hermes/Clacky 会话 → 过滤 → Anda 知识图谱
 ```
@@ -45,7 +45,7 @@
 
 | 组件 | 服务 | 地址 |
 |------|------|------|
-| LLM | 小米 MiMo | `token-plan-cn.xiaomimimo.com` |
+| LLM | DeepSeek | `api.deepseek.com` |
 | 向量存储 | Memory API → Meilisearch | `memory.arjo.us.ci` |
 | 海马体 | Anda Hippocampus | `hippocampus.arjo.us.ci` |
 | RSS 聚合 | FreshRSS（Mac mini Docker） | `192.168.1.175:8080` |
@@ -82,7 +82,7 @@
 - Obsidian
 
 **共享**：
-- 小米 MiMo API Key
+- DeepSeek API Key
 - Anda 空间 Token
 - 飞书 Webhook（告警用）
 
@@ -97,7 +97,9 @@ nano .env
 
 | 变量 | 说明 |
 |------|------|
-| `XIAOMI_API_KEY` | 小米 MiMo API Key |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key |
+| `DEEPSEEK_BASE_URL` | DeepSeek API 地址，默认 `https://api.deepseek.com` |
+| `DEEPSEEK_MODEL` | DeepSeek 模型，默认 `deepseek-chat` |
 | `MEMORY_API_URL` | `https://memory.arjo.us.ci` |
 | `MEMORY_API_TOKEN` | Memory API Token |
 | `ANDA_BASE_URL` | `https://hippocampus.arjo.us.ci` |

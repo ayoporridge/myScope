@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 class Layer2WikiTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        os.environ.setdefault("XIAOMI_API_KEY", "test-key")
+        os.environ.setdefault("DEEPSEEK_API_KEY", "test-key")
+        os.environ.setdefault("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        os.environ.setdefault("DEEPSEEK_MODEL", "deepseek-chat")
         cls.layer2 = importlib.import_module("scripts.layer2_wiki")
 
     def test_extract_topics_falls_back_to_text_content(self):

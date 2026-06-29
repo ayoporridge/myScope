@@ -38,6 +38,8 @@ except ImportError:  # pragma: no cover - package import path for tests
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
@@ -55,7 +57,7 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-llm = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
+llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
 
 # ── 从 Meilisearch 读取最近切片（Layer 1）───────────────────
@@ -310,7 +312,7 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
 
     try:
         resp = llm.chat.completions.create(
-            model="deepseek-chat",
+            model=DEEPSEEK_MODEL,
             messages=[{
                 "role": "user",
                 "content": WIKI_PROMPT.format(

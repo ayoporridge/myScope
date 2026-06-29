@@ -2,7 +2,7 @@
 """
 layer1_rag.py
 第一层：事实记忆（MacBook 端）
-微信 + Obsidian → Xiaomi mimo 切片 → Meilisearch memory_chunks
+微信 + Obsidian → DeepSeek 切片 → Meilisearch memory_chunks
 每天凌晨 5:00 运行
 注：flomo 采集在 Mac mini 上独立运行（layer1_flomo.py）
 """
@@ -23,10 +23,12 @@ from _metrics import record_last_run, record_metrics
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
+DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
-llm = OpenAI(api_key=DEEPSEEK_KEY, base_url="https://api.deepseek.com")
+llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
 OPENCLI = "/Users/xz/.local/nodejs/bin/opencli"
 OBSIDIAN_VAULT = Path("/Users/xz/Desktop/obsidian-default")
@@ -175,12 +177,12 @@ SLICE_PROMPT = """\
 
 
 def slice_text(text: str) -> list[dict]:
-    """用 Xiaomi mimo 把长文本切成记忆碎片"""
+    """用 DeepSeek 把长文本切成记忆碎片"""
     if len(text) < 30:
         return []
     try:
         resp = llm.chat.completions.create(
-            model="deepseek-chat",
+            model=DEEPSEEK_MODEL,
             messages=[{
                 "role": "user",
                 "content": SLICE_PROMPT.format(text=text[:3000], max_chars=CHUNK_MAX)

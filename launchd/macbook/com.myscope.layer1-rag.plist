@@ -3,7 +3,7 @@
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   MacBook 开机任务：第一层 RAG 切片
-  微信收藏 + 文件传输助手 + Obsidian → Xiaomi mimo 切片 → Meilisearch memory_chunks
+  微信收藏 + 文件传输助手 + Obsidian → DeepSeek 切片 → Meilisearch memory_chunks
   登录时运行（RunAtLoad），脚本内部通过状态文件做增量
 -->
 <plist version="1.0">
