@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import json
+import argparse
 import hashlib
 import subprocess
 import time
@@ -52,6 +53,13 @@ def load_state() -> dict:
 def save_state(state: dict):
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="公众号文章 → hubble_radius")
+    parser.add_argument("--since", help="覆盖 state 中的起始日期，例如 2026-01-01")
+    parser.add_argument("--limit", type=int, default=1000, help="opencli 拉取上限")
+    return parser.parse_args(argv)
 
 
 def fetch_articles(since: str, limit: int = 500) -> list[dict] | None:
@@ -108,7 +116,8 @@ def push_to_meilisearch(docs: list[dict]):
     print(f"  [memory-api] 共写入 {total} 条")
 
 
-def main():
+def main(argv: list[str] | None = None):
+    args = parse_args(argv)
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始第三层 公众号文章索引")
 
@@ -124,7 +133,9 @@ def main():
     # 确定拉取时间范围：上次运行日期 或 昨天
     state = load_state()
     last_run = state.get("last_run_date")
-    if last_run:
+    if args.since:
+        since = args.since
+    elif last_run:
         since = last_run
     else:
         since = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -132,7 +143,7 @@ def main():
     print(f"  拉取 {since} 以来的文章")
 
     # 拉取全量文章
-    articles = fetch_articles(since=since, limit=1000)
+    articles = fetch_articles(since=since, limit=args.limit)
     if articles is None:
         print("  拉取失败，不推进 state")
         record_metrics("layer3_wechat", articles_indexed=0, fetch_failed=True,
