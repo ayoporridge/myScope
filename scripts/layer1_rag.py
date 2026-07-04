@@ -31,7 +31,7 @@ MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
 OPENCLI = "/Users/xz/.local/nodejs/bin/opencli"
-OBSIDIAN_VAULT = Path("/Users/xz/Desktop/obsidian-default")
+OBSIDIAN_VAULT = Path(os.environ.get("OBSIDIAN_VAULT", "/Users/xizhoumini/Documents/obsidian-default")).expanduser()
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_state.json"
 
 CHUNK_MAX = 200
