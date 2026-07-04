@@ -4,7 +4,7 @@
 <!--
   Mac mini 定时任务：第一层 flomo 采集
   flomo 网页 → DeepSeek 切片 → Meilisearch memory_chunks
-  每天 04:30 运行
+  每天 19:10 运行（DeepSeek 夜间窗口）
 -->
 <plist version="1.0">
 <dict>
@@ -21,9 +21,9 @@
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>4</integer>
+    <integer>19</integer>
     <key>Minute</key>
-    <integer>30</integer>
+    <integer>10</integer>
   </dict>
   <key>StandardOutPath</key>
   <string>MYSCOPE_DIR/logs/layer1_flomo.log</string>

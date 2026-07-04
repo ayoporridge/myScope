@@ -16,7 +16,7 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertFalse(self.runner.is_due("2026-06-24T13:30:00", 24, now=now))
 
     def test_plan_due_jobs_keeps_layer2_after_collectors(self):
-        now = datetime(2026, 6, 24, 14, 0, 0)
+        now = datetime(2026, 6, 24, 19, 30, 0)
         status = {
             "jodeMacBook-Air": {
                 "dayflow_sync": {"last_success_at": "2026-06-21T20:47:09"},
@@ -34,6 +34,39 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertEqual("layer2_wiki", names[-1])
         self.assertIn("dayflow_daily_summary", names)
         self.assertIn("dayflow_sync", names)
+
+    def test_deepseek_jobs_only_run_in_night_window(self):
+        status = {
+            "jodeMacBook-Air": {
+                "dayflow_sync": {"last_success_at": "2026-06-20T20:47:09"},
+                "layer1_rag": {"last_success_at": "2026-06-20T22:02:37"},
+                "layer2_wiki": {"last_success_at": "2026-06-20T22:03:09"},
+            }
+        }
+
+        daytime = self.runner.plan_due_jobs(
+            "macbook",
+            status,
+            hostname="jodeMacBook-Air",
+            now=datetime(2026, 6, 24, 14, 0, 0),
+        )
+        night = self.runner.plan_due_jobs(
+            "macbook",
+            status,
+            hostname="jodeMacBook-Air",
+            now=datetime(2026, 6, 24, 19, 30, 0),
+        )
+
+        self.assertNotIn("layer1_rag", [job.name for job in daytime])
+        self.assertNotIn("layer2_wiki", [job.name for job in daytime])
+        self.assertIn("layer1_rag", [job.name for job in night])
+        self.assertIn("layer2_wiki", [job.name for job in night])
+
+    def test_deepseek_window_crosses_midnight(self):
+        self.assertTrue(self.runner.is_deepseek_window(now=datetime(2026, 6, 24, 19, 0, 0)))
+        self.assertTrue(self.runner.is_deepseek_window(now=datetime(2026, 6, 25, 7, 59, 0)))
+        self.assertFalse(self.runner.is_deepseek_window(now=datetime(2026, 6, 25, 8, 0, 0)))
+        self.assertFalse(self.runner.is_deepseek_window(now=datetime(2026, 6, 24, 18, 59, 0)))
 
 
 if __name__ == "__main__":

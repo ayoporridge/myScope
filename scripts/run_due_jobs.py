@@ -25,6 +25,9 @@ except ImportError:  # pragma: no cover - package import path for tests
 PROJECT_DIR = Path(__file__).parent.parent
 PYTHON = sys.executable or "python3"
 SYNC_DISABLED = os.environ.get("MYSCOPE_DASHBOARD_SYNC_DISABLED", "").lower() in {"1", "true", "yes"}
+DEEPSEEK_JOBS = frozenset({"layer1_rag", "layer1_flomo", "layer2_wiki"})
+DEEPSEEK_WINDOW_START = os.environ.get("MYSCOPE_DEEPSEEK_WINDOW_START", "19:00")
+DEEPSEEK_WINDOW_END = os.environ.get("MYSCOPE_DEEPSEEK_WINDOW_END", "08:00")
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,31 @@ def is_due(last_success_at: str | None, interval_hours: float, *, now: datetime 
     return (now - last).total_seconds() >= interval_hours * 3600
 
 
+def _parse_hhmm(value: str) -> int:
+    try:
+        hour_text, minute_text = value.split(":", 1)
+        hour = int(hour_text)
+        minute = int(minute_text)
+    except (ValueError, AttributeError):
+        raise ValueError(f"invalid time window value: {value!r}") from None
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        raise ValueError(f"invalid time window value: {value!r}")
+    return hour * 60 + minute
+
+
+def is_deepseek_window(*, now: datetime | None = None) -> bool:
+    """Return whether DeepSeek-backed jobs may start now."""
+    now = now or datetime.now()
+    current = now.hour * 60 + now.minute
+    start = _parse_hhmm(DEEPSEEK_WINDOW_START)
+    end = _parse_hhmm(DEEPSEEK_WINDOW_END)
+    if start == end:
+        return True
+    if start < end:
+        return start <= current < end
+    return current >= start or current < end
+
+
 def _last_success(status: dict, hostname: str, job_name: str) -> str | None:
     host_jobs = status.get(hostname, {})
     rich = host_jobs.get(job_name, {})
@@ -102,6 +130,8 @@ def plan_due_jobs(
 
     planned = []
     for job in MACHINE_JOBS[machine]:
+        if job.name in DEEPSEEK_JOBS and not force and not is_deepseek_window(now=now):
+            continue
         if force or is_due(_last_success(status, hostname, job.name), job.interval_hours, now=now):
             planned.append(job)
     return planned

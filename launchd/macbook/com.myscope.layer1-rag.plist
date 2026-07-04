@@ -4,7 +4,7 @@
 <!--
   MacBook 开机任务：第一层 RAG 切片
   微信收藏 + 文件传输助手 + Obsidian → DeepSeek 切片 → Meilisearch memory_chunks
-  登录时运行（RunAtLoad），脚本内部通过状态文件做增量
+  每天 19:20 运行（DeepSeek 夜间窗口）；默认安装仍使用 run_due_jobs 统一补跑
 -->
 <plist version="1.0">
 <dict>
@@ -22,8 +22,15 @@
     <key>PATH</key>
     <string>PATH_VALUE</string>
   </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>19</integer>
+    <key>Minute</key>
+    <integer>20</integer>
+  </dict>
   <key>RunAtLoad</key>
-  <true/>
+  <false/>
   <key>StandardOutPath</key>
   <string>MYSCOPE_DIR/logs/layer1_rag.log</string>
   <key>StandardErrorPath</key>

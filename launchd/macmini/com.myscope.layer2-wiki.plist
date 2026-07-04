@@ -4,7 +4,7 @@
 <!--
   Mac mini 定时任务：第二层 LLM Wiki
   Meilisearch memory_chunks → DeepSeek 归纳 → Meilisearch wiki_entries
-  每天 05:30 运行（layer1 跑完后）
+  每天 07:20 运行（DeepSeek 夜间窗口，hippocampus_formation 之后）
 -->
 <plist version="1.0">
 <dict>
@@ -21,9 +21,9 @@
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>5</integer>
+    <integer>7</integer>
     <key>Minute</key>
-    <integer>30</integer>
+    <integer>20</integer>
   </dict>
   <key>StandardOutPath</key>
   <string>MYSCOPE_DIR/logs/layer2_wiki.log</string>

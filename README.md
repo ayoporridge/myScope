@@ -17,11 +17,11 @@
 ┌─────────────────────────────────────────────────────────┐
 │  Mac mini（24/7 开机）                                   │
 │                                                         │
-│  定时任务（凌晨）：                                       │
+│  定时任务（夜间/清晨）：                                  │
 │    02:30  layer3_index.py       FreshRSS → hubble_radius│
-│    04:30  layer1_flomo.py       flomo → memory_chunks   │
-│    05:30  layer2_wiki.py        跨层综合 → wiki_entries  │
+│    19:10  layer1_flomo.py       flomo → memory_chunks   │
 │    06:00  hippocampus_formation  Codex/Hermes → Anda    │
+│    07:20  layer2_wiki.py        跨层综合 → wiki_entries  │
 │    06:30  health_check.py       健康检查 → 飞书告警       │
 │                                                         │
 │  Docker：FreshRSS / Meilisearch / Memory API / Anda     │
@@ -143,8 +143,8 @@ bash launchd/install.sh macbook  # 注册开机任务
 | 时间 | 脚本 | 数据源 → 目标索引 |
 |------|------|------------------|
 | 02:30 | `layer3_index.py` | FreshRSS → `hubble_radius` |
-| 04:30 | `layer1_flomo.py` | flomo 网页 → `memory_chunks` |
-| 05:30 | `layer2_wiki.py` | 跨层综合 → `wiki_entries` |
+| 19:10 | `layer1_flomo.py` | flomo 网页 → `memory_chunks`（DeepSeek） |
+| 07:20 | `layer2_wiki.py` | 跨层综合 → `wiki_entries`（DeepSeek） |
 | 06:00 | `hippocampus_formation.py` | Codex/Hermes/Clacky → Anda |
 | 06:30 | `health_check.py` | 存活性+质量 → 飞书告警 |
 
@@ -155,10 +155,10 @@ bash launchd/install.sh macbook  # 注册开机任务
 | 登录时 + 每小时 | `run_due_jobs.py --machine macbook` | 根据 `last_success_at` 补跑到期任务 |
 | 到期时 | `dayflow_sync.py` | Dayflow → `memory_chunks` |
 | 到期时 | `layer3_wechat.py` | 公众号文章 → `hubble_radius` |
-| 到期时 | `layer1_rag.py` | 微信+Obsidian → `memory_chunks` |
+| 到期时 | `layer1_rag.py` | 微信+Obsidian → `memory_chunks`（仅 19:00-08:00） |
 | 到期时 | `hippocampus_formation.py` | Claude/Clacky → Anda |
 | 到期时 | `dayflow_daily_summary.py` | Dayflow 日摘要 → Anda |
-| 到期时 | `layer2_wiki.py` | 跨层综合 → `wiki_entries` |
+| 到期时 | `layer2_wiki.py` | 跨层综合 → `wiki_entries`（仅 19:00-08:00） |
 
 ---
 
