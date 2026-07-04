@@ -1,0 +1,65 @@
+{
+  "memory_smoke_test": {
+    "status": "success",
+    "last_started_at": "2026-07-02T08:12:22",
+    "last_finished_at": "2026-07-02T08:13:22",
+    "last_exit_code": 0,
+    "last_duration_seconds": 59.9,
+    "last_input_count": null,
+    "last_output_count": null,
+    "last_success_count": null,
+    "last_running_at": "2026-07-02T08:12:22",
+    "last_success_at": "2026-07-02T08:13:22"
+  },
+  "source_audit": {
+    "status": "success",
+    "last_started_at": "2026-07-02T08:13:22",
+    "last_finished_at": "2026-07-02T08:13:22",
+    "last_exit_code": 0,
+    "last_duration_seconds": 0.1,
+    "last_input_count": null,
+    "last_output_count": null,
+    "last_success_count": null,
+    "last_running_at": "2026-07-02T08:13:22",
+    "last_success_at": "2026-07-02T08:13:22"
+  },
+  "run_due_jobs": {
+    "status": "success",
+    "last_started_at": "2026-07-02T08:13:22",
+    "last_finished_at": "2026-07-02T08:13:22",
+    "last_exit_code": null,
+    "last_duration_seconds": null,
+    "last_input_count": null,
+    "last_output_count": 2,
+    "last_success_count": 2,
+    "extra": {
+      "machine": "macmini"
+    },
+    "last_success_at": "2026-07-02T08:13:22"
+  },
+  "layer2_wiki": {
+    "status": "success",
+    "last_started_at": "2026-07-02T08:20:34",
+    "last_finished_at": "2026-07-02T08:21:42",
+    "last_exit_code": 0,
+    "last_duration_seconds": 67.7,
+    "last_input_count": null,
+    "last_output_count": null,
+    "last_success_count": null,
+    "last_running_at": "2026-07-02T08:20:34",
+    "last_success_at": "2026-07-02T08:21:42"
+  },
+  "layer1_flomo": {
+    "status": "success",
+    "last_started_at": "2026-07-02T08:29:05",
+    "last_finished_at": "2026-07-02T08:29:30",
+    "last_exit_code": 0,
+    "last_duration_seconds": 24.9,
+    "last_input_count": null,
+    "last_output_count": null,
+    "last_success_count": null,
+    "last_running_at": "2026-07-02T08:29:05",
+    "last_failure_at": "2026-07-02T08:22:21",
+    "last_success_at": "2026-07-02T08:29:30"
+  }
+}
