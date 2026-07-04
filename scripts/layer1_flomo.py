@@ -11,6 +11,7 @@ import os
 import json
 import re
 import hashlib
+import shutil
 import subprocess
 import time
 from datetime import datetime, timedelta
@@ -30,11 +31,34 @@ MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 
 llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
-# Mac mini 上 opencli 路径（根据实际安装位置调整）
-OPENCLI = os.environ.get("OPENCLI_PATH", "/usr/local/bin/opencli")
+def resolve_opencli() -> str:
+    """Find opencli without assuming the macOS user or install prefix."""
+    candidates = [
+        os.environ.get("OPENCLI_PATH", ""),
+        shutil.which("opencli") or "",
+        "/Users/xizhoumini/.local/nodejs/bin/opencli",
+        "/Users/xz/.local/nodejs/bin/opencli",
+        "/opt/homebrew/bin/opencli",
+        "/usr/local/bin/opencli",
+    ]
+    for candidate in candidates:
+        if candidate and Path(candidate).exists():
+            return candidate
+    return os.environ.get("OPENCLI_PATH", "") or "opencli"
+
+
+OPENCLI = resolve_opencli()
+OPENCLI_ENV = dict(
+    os.environ,
+    PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:" + os.environ.get("PATH", ""),
+)
+OPENCLI_EXTENSION_ID = os.environ.get("OPENCLI_EXTENSION_ID", "ildkmabpimmkaediidaifkhjpohdnifk")
+OPENCLI_CHROME_APP = os.environ.get("OPENCLI_CHROME_APP", "Google Chrome")
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_flomo_state.json"
 
 CHUNK_MAX = 200
+LLM_ERRORS: list[str] = []
+COLLECT_ERRORS: list[str] = []
 
 
 # ── 状态管理 ────────────────────────────────────────────────
@@ -49,6 +73,53 @@ def save_state(state: dict):
     STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
 
 
+def is_browser_bridge_connected() -> bool:
+    try:
+        result = subprocess.run(
+            [OPENCLI, "profile", "list"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env=OPENCLI_ENV,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+    output = f"{result.stdout}\n{result.stderr}"
+    return "Connected Browser Bridge profiles" in output
+
+
+def wake_browser_bridge() -> bool:
+    if is_browser_bridge_connected():
+        return True
+
+    popup_url = f"chrome-extension://{OPENCLI_EXTENSION_ID}/popup.html"
+    subprocess.run(
+        ["/usr/bin/open", "-g", "-a", OPENCLI_CHROME_APP, popup_url],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    time.sleep(5)
+    if is_browser_bridge_connected():
+        return True
+
+    subprocess.run(
+        [OPENCLI, "daemon", "restart"],
+        capture_output=True,
+        text=True,
+        timeout=20,
+        env=OPENCLI_ENV,
+    )
+    subprocess.run(
+        ["/usr/bin/open", "-g", "-a", OPENCLI_CHROME_APP, popup_url],
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    time.sleep(5)
+    return is_browser_bridge_connected()
+
+
 # ── flomo 采集（opencli browser 自动化） ────────────────────
 def collect_flomo() -> list[dict]:
     """通过 opencli browser 从 flomo 网页提取 memo"""
@@ -56,32 +127,38 @@ def collect_flomo() -> list[dict]:
     texts = []
 
     try:
+        if not wake_browser_bridge():
+            COLLECT_ERRORS.append("opencli browser bridge disconnected")
+            print("  [flomo] OpenCLI Browser Bridge 未连接")
+            return []
+
         # 打开 flomo
         r = subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "open", "https://v.flomoapp.com/mine",
-             "--window", "background"],
-            capture_output=True, text=True, timeout=30
+            [OPENCLI, "browser", "flomo-scrape", "open", "https://v.flomoapp.com/mine"],
+            capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
         )
         if r.returncode != 0:
-            print(f"  [flomo] 打开失败: {r.stderr[:200]}")
+            summary = (r.stderr or r.stdout or "opencli open failed").strip().replace("\n", " ")[:300]
+            COLLECT_ERRORS.append(summary)
+            print(f"  [flomo] 打开失败: {summary}")
             return []
 
         # 等待页面加载
         subprocess.run(
             [OPENCLI, "browser", "flomo-scrape", "wait", "time", "5"],
-            capture_output=True, text=True, timeout=15
+            capture_output=True, text=True, timeout=15, env=OPENCLI_ENV
         )
 
         # 检查是否需要登录
         r = subprocess.run(
             [OPENCLI, "browser", "flomo-scrape", "state"],
-            capture_output=True, text=True, timeout=10
+            capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
         )
         if r.returncode == 0 and "login" in r.stdout.lower():
             print("  [flomo] 未登录，跳过（请先在 Mac mini 的 Chrome 中登录 flomo）")
             subprocess.run(
                 [OPENCLI, "browser", "flomo-scrape", "close"],
-                capture_output=True, text=True, timeout=10
+                capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
             )
             return []
 
@@ -89,7 +166,7 @@ def collect_flomo() -> list[dict]:
         for i in range(5):
             subprocess.run(
                 [OPENCLI, "browser", "flomo-scrape", "scroll", "down"],
-                capture_output=True, text=True, timeout=10
+                capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
             )
             time.sleep(1.5)
 
@@ -97,13 +174,13 @@ def collect_flomo() -> list[dict]:
         r = subprocess.run(
             [OPENCLI, "browser", "flomo-scrape", "extract",
              "--selector", ".memo-list,.richtext,.memo,.note-list"],
-            capture_output=True, text=True, timeout=30
+            capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
         )
         if r.returncode != 0:
             # fallback: 提取整页
             r = subprocess.run(
                 [OPENCLI, "browser", "flomo-scrape", "extract"],
-                capture_output=True, text=True, timeout=30
+                capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
             )
 
         if r.returncode == 0 and r.stdout.strip():
@@ -124,15 +201,19 @@ def collect_flomo() -> list[dict]:
         # 关闭浏览器 session
         subprocess.run(
             [OPENCLI, "browser", "flomo-scrape", "close"],
-            capture_output=True, text=True, timeout=10
+            capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
         )
 
     except subprocess.TimeoutExpired:
+        COLLECT_ERRORS.append("opencli timeout")
         print("  [flomo] 超时")
     except FileNotFoundError:
+        COLLECT_ERRORS.append(f"opencli not found: {OPENCLI}")
         print(f"  [flomo] opencli 未找到: {OPENCLI}")
     except Exception as e:
-        print(f"  [flomo] 异常: {e}")
+        summary = str(e).strip().replace("\n", " ")[:300]
+        COLLECT_ERRORS.append(summary)
+        print(f"  [flomo] 异常: {summary}")
 
     return texts
 
@@ -158,6 +239,8 @@ SLICE_PROMPT = """\
 def slice_text(text: str) -> list[dict]:
     if len(text) < 30:
         return []
+    if LLM_ERRORS:
+        return []
     try:
         resp = llm.chat.completions.create(
             model=DEEPSEEK_MODEL,
@@ -173,7 +256,9 @@ def slice_text(text: str) -> list[dict]:
             return []
         return json.loads(match.group())
     except Exception as e:
-        print(f"    [切片失败] {e}")
+        summary = str(e).strip().replace("\n", " ")[:300]
+        LLM_ERRORS.append(summary)
+        print(f"    [切片失败] {summary}")
         return []
 
 
@@ -205,7 +290,7 @@ def push_chunks(docs: list[dict]):
 
 
 # ── 主流程 ────────────────────────────────────────────────
-def main():
+def main() -> int:
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始 flomo 采集（Mac mini）")
 
@@ -213,12 +298,30 @@ def main():
     texts = collect_flomo()
 
     if not texts:
+        if COLLECT_ERRORS:
+            print("  flomo 采集失败，未更新 last_run")
+            record_metrics(
+                "layer1_flomo",
+                memos=0,
+                chunks=0,
+                collect_errors=len(COLLECT_ERRORS),
+                collect_error_summary=COLLECT_ERRORS[0],
+                llm_errors=0,
+                run_duration_seconds=round(time.time() - start_time, 1),
+            )
+            return 2
         print("  无新 memo，跳过")
         save_state({"last_run": datetime.now().isoformat()})
         record_last_run("layer1_flomo")
-        record_metrics("layer1_flomo", memos=0, chunks=0,
-                       run_duration_seconds=round(time.time() - start_time, 1))
-        return
+        record_metrics(
+            "layer1_flomo",
+            memos=0,
+            chunks=0,
+            collect_errors=0,
+            llm_errors=0,
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
+        return 0
 
     print(f"  共收集 {len(texts)} 条 memo，开始切片...")
 
@@ -243,11 +346,21 @@ def main():
     push_chunks(all_chunks)
 
     save_state({"last_run": datetime.now().isoformat()})
-    record_last_run("layer1_flomo")
-    record_metrics("layer1_flomo", memos=len(texts), chunks=len(all_chunks),
-                   run_duration_seconds=round(time.time() - start_time, 1))
+    if not LLM_ERRORS:
+        record_last_run("layer1_flomo")
+    record_metrics(
+        "layer1_flomo",
+        memos=len(texts),
+        chunks=len(all_chunks),
+        collect_errors=len(COLLECT_ERRORS),
+        collect_error_summary=COLLECT_ERRORS[0] if COLLECT_ERRORS else "",
+        llm_errors=len(LLM_ERRORS),
+        llm_error_summary=LLM_ERRORS[0] if LLM_ERRORS else "",
+        run_duration_seconds=round(time.time() - start_time, 1),
+    )
     print(f"[完成] flomo 采集 {len(all_chunks)} 条记忆碎片")
+    return 2 if LLM_ERRORS else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

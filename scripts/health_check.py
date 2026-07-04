@@ -337,7 +337,37 @@ def check_quality() -> list[str]:
                 f"🟡 `layer1_rag` 新增切片仅 {total_chunks} 条（阈值 3）"
             )
 
-    # 检查 3：wiki_entries 连续 3 天无新增（跨机器聚合）
+    # 检查 3：LLM provider 是否失败（余额、Key 或模型服务异常）
+    llm_metrics = [
+        m for m in recent_metrics
+        if m.get("script") in ("layer1_rag", "layer1_flomo", "layer2_wiki")
+        and m.get("date") in (today, yesterday)
+        and (m.get("llm_errors", 0) or m.get("llm_error_summary"))
+    ]
+    if llm_metrics:
+        by_job = {}
+        for m in llm_metrics:
+            key = (m.get("hostname", "unknown"), m.get("script", "unknown"))
+            by_job[key] = m
+        for (host, script), metric in by_job.items():
+            summary = str(metric.get("llm_error_summary") or "LLM 调用失败").strip()
+            alerts.append(f"🔴 `{host}` `{script}` LLM 调用失败：{summary[:180]}")
+
+    collect_metrics = [
+        m for m in recent_metrics
+        if m.get("script") == "layer1_flomo"
+        and m.get("date") in (today, yesterday)
+        and (m.get("collect_errors", 0) or m.get("collect_error_summary"))
+    ]
+    if collect_metrics:
+        by_host = {}
+        for m in collect_metrics:
+            by_host[m.get("hostname", "unknown")] = m
+        for host, metric in by_host.items():
+            summary = str(metric.get("collect_error_summary") or "flomo 采集失败").strip()
+            alerts.append(f"🔴 `{host}` `layer1_flomo` 采集失败：{summary[:180]}")
+
+    # 检查 4：wiki_entries 连续 3 天无新增（跨机器聚合）
     wiki_metrics = [
         m for m in recent_metrics
         if m.get("script") == "layer2_wiki"

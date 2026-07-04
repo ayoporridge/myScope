@@ -58,6 +58,7 @@ HEADERS = {
 }
 
 llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
+LLM_ERRORS: list[str] = []
 
 
 # ── 从 Meilisearch 读取最近切片（Layer 1）───────────────────
@@ -285,6 +286,9 @@ WIKI_PROMPT = """\
 
 def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: list[str], hippocampus_text: str = "") -> list[dict]:
     """用 LLM 跨层归纳 Wiki 条目"""
+    if LLM_ERRORS:
+        return []
+
     chunks_text = "\n".join(
         f"- {c.get('content') or c.get('text') or c.get('digest') or ''}"
         for c in chunks[:50]
@@ -330,7 +334,9 @@ def plan_wiki(chunks: list[dict], hubble_results: list[dict], existing_titles: l
             return []
         return json.loads(match.group())
     except Exception as e:
-        print(f"  [LLM 归纳失败] {e}")
+        summary = str(e).strip().replace("\n", " ")[:300]
+        LLM_ERRORS.append(summary)
+        print(f"  [LLM 归纳失败] {summary}")
         return []
 
 
@@ -373,7 +379,7 @@ def push_wiki_entries(entries: list[dict]):
 
 
 # ── 主流程 ────────────────────────────────────────────────
-def main():
+def main() -> int:
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始第二层 LLM Wiki 更新")
 
@@ -387,9 +393,10 @@ def main():
             new_chunks_processed=0,
             hubble_results=0,
             wiki_entries_written=0,
+            llm_errors=0,
             run_duration_seconds=round(time.time() - start_time, 1),
         )
-        return
+        return 0
     print(f"  发现 {len(chunks)} 条 Layer 1 新切片")
 
     # Step 2: 提取今日主题，搜索哈勃半径 + 海马体
@@ -412,8 +419,9 @@ def main():
     # Step 5: 写入
     push_wiki_entries(operations)
 
-    # 记录指标
-    record_last_run("layer2_wiki")
+    # 记录指标；LLM 失败时不刷新 last_run，让健康检查保留上次成功时间。
+    if not LLM_ERRORS:
+        record_last_run("layer2_wiki")
     record_metrics(
         "layer2_wiki",
         new_chunks_processed=len(chunks),
@@ -426,10 +434,13 @@ def main():
         personal_hubble_count=sum(1 for op in operations if "hubble" in str(op.get("sources", "")).lower() or "哈勃" in str(op.get("sources", ""))),
         personal_only_count=sum(1 for op in operations if "hubble" not in str(op.get("sources", "")).lower() and "哈勃" not in str(op.get("sources", ""))),
         wiki_entries_written=len(operations),
+        llm_errors=len(LLM_ERRORS),
+        llm_error_summary=LLM_ERRORS[0] if LLM_ERRORS else "",
         run_duration_seconds=round(time.time() - start_time, 1),
     )
     print("[完成] Wiki 更新结束")
+    return 2 if LLM_ERRORS else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
