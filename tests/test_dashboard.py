@@ -2,6 +2,7 @@ import importlib
 import json
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 
@@ -49,10 +50,11 @@ class DashboardTests(unittest.TestCase):
             logs.mkdir(parents=True)
             shared.mkdir(parents=True)
 
+            today = datetime.now().strftime("%Y-%m-%d")
             entry = {
-                "date": "2026-06-24",
+                "date": today,
                 "script": "layer2_wiki",
-                "timestamp": "2026-06-24T05:30:00",
+                "timestamp": f"{today}T05:30:00",
                 "hostname": "mini",
                 "wiki_entries_written": 8,
             }
@@ -126,6 +128,37 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual("success", status["hosts"]["macbook"]["dayflow_sync"]["status"])
             self.assertEqual("success", status["hosts"]["mini"]["layer1_flomo"]["status"])
             self.assertEqual("2026-06-24T04:31:26", status["hosts"]["mini"]["layer1_flomo"]["last_success_at"])
+
+    def test_get_status_prefers_fresher_local_last_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_status = root / "data" / "job_status"
+            logs = root / "logs"
+            shared_status.mkdir(parents=True)
+            logs.mkdir()
+            (shared_status / "mini.json").write_text(json.dumps({
+                "layer1_flomo": {
+                    "status": "success",
+                    "last_success_at": "2026-07-02T08:29:30",
+                    "last_finished_at": "2026-07-02T08:29:30",
+                }
+            }))
+            (logs / "last_run.json").write_text(json.dumps({
+                "layer1_flomo": "2026-07-03T19:10:40"
+            }))
+
+            original_host = self.dashboard.LOCAL_HOSTNAME
+            self.dashboard.LOCAL_HOSTNAME = "mini"
+            self.dashboard.JOB_STATUS_SHARED_DIR = shared_status
+            self.dashboard.JOB_STATUS_FILE = logs / "missing_job_status.json"
+            self.dashboard.LAST_RUN_FILE = logs / "last_run.json"
+            try:
+                status = self.dashboard.get_status()
+            finally:
+                self.dashboard.LOCAL_HOSTNAME = original_host
+
+            self.assertEqual("success", status["hosts"]["mini"]["layer1_flomo"]["status"])
+            self.assertEqual("2026-07-03T19:10:40", status["hosts"]["mini"]["layer1_flomo"]["last_success_at"])
 
     def test_status_color_uses_script_expected_interval(self):
         self.assertEqual("green", self.dashboard._script_status_color("memory_smoke_test", "success", 47.5))

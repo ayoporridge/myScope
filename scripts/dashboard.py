@@ -133,6 +133,44 @@ def _last_run_jobs(data: dict) -> dict:
     return jobs
 
 
+def _parse_time(value: str | None):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _merge_local_last_run(hosts: dict, local_last_run: dict):
+    local_jobs = hosts.setdefault(LOCAL_HOSTNAME, {})
+    for name, info in _last_run_jobs(local_last_run).items():
+        last_run_at = _parse_time(info.get("last_success_at"))
+        current = local_jobs.get(name, {})
+        current_success_at = _parse_time(current.get("last_success_at"))
+        if current_success_at and last_run_at and current_success_at >= last_run_at:
+            continue
+
+        event_times = [
+            parsed
+            for parsed in (
+                _parse_time(current.get(key))
+                for key in ("last_finished_at", "last_failure_at", "last_started_at")
+            )
+            if parsed is not None
+        ]
+        latest_event_at = max(event_times) if event_times else None
+        entry = {
+            **current,
+            "last_success_at": info["last_success_at"],
+        }
+        if latest_event_at is None or (last_run_at and last_run_at >= latest_event_at):
+            entry["status"] = "success"
+            entry["last_finished_at"] = info["last_finished_at"]
+            entry.pop("last_error_summary", None)
+        local_jobs[name] = entry
+
+
 def _script_status_color(name: str, status: str | None, hours_ago: float) -> str:
     if status == "failure" or hours_ago < 0:
         return "red"
@@ -164,9 +202,7 @@ def get_status() -> dict:
             pass
     local_last_run = _read_last_run()
     if hosts and local_last_run:
-        local_jobs = hosts.setdefault(LOCAL_HOSTNAME, {})
-        for name, info in _last_run_jobs(local_last_run).items():
-            local_jobs.setdefault(name, info)
+        _merge_local_last_run(hosts, local_last_run)
     if hosts:
         scripts = []
         for host, jobs in hosts.items():

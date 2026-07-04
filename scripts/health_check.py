@@ -11,6 +11,7 @@ MyScope 健康检查：存活性 + 质量性 + 飞书告警
 import json
 import os
 import shutil
+import socket
 import subprocess
 import time
 from datetime import datetime, timedelta
@@ -42,6 +43,7 @@ METRICS_FILE = LOGS_DIR / "metrics.jsonl"
 METRICS_SHARED_DIR = Path(__file__).parent.parent / "data" / "metrics"
 JOB_STATUS_FILE = LOGS_DIR / "job_status.json"
 JOB_STATUS_SHARED_DIR = Path(__file__).parent.parent / "data" / "job_status"
+LOCAL_HOSTNAME = socket.gethostname().split(".")[0]
 
 # 飞书告警配置
 FEISHU_WEBHOOK_URL = os.environ.get("FEISHU_WEBHOOK_URL", "")
@@ -58,6 +60,47 @@ MONITORED_SCRIPTS = [
 ]
 
 LIVENESS_THRESHOLD_HOURS = 25
+
+
+def _parse_time(value: str | None):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _merge_local_last_run(host_status: dict, local_last_run: dict):
+    local_jobs = host_status.setdefault(LOCAL_HOSTNAME, {})
+    for script, last_run_str in local_last_run.items():
+        last_run_at = _parse_time(last_run_str)
+        if not last_run_at:
+            continue
+
+        current = local_jobs.get(script, {})
+        current_success_at = _parse_time(current.get("last_success_at"))
+        if current_success_at and current_success_at >= last_run_at:
+            continue
+
+        event_times = [
+            parsed
+            for parsed in (
+                _parse_time(current.get(key))
+                for key in ("last_finished_at", "last_failure_at", "last_started_at")
+            )
+            if parsed is not None
+        ]
+        latest_event_at = max(event_times) if event_times else None
+        entry = {
+            **current,
+            "last_success_at": last_run_str,
+        }
+        if latest_event_at is None or last_run_at >= latest_event_at:
+            entry["status"] = "success"
+            entry["last_finished_at"] = last_run_str
+            entry.pop("last_error_summary", None)
+        local_jobs[script] = entry
 
 
 # ── 飞书告警推送 ─────────────────────────────────────────────
@@ -136,55 +179,61 @@ def check_liveness() -> list[str]:
         except (json.JSONDecodeError, OSError):
             pass
 
-    if host_status:
-        now = datetime.now()
-        threshold = timedelta(hours=LIVENESS_THRESHOLD_HOURS)
-        for host, jobs in host_status.items():
-            for script in MONITORED_SCRIPTS:
-                info = jobs.get(script)
-                if not info:
-                    continue
-                last_run_str = info.get("last_success_at") or info.get("last_finished_at")
-                if not last_run_str:
-                    alerts.append(f"🔴 `{host}` `{script}` 无成功运行记录")
-                    continue
-                try:
-                    last_run = datetime.fromisoformat(last_run_str)
-                    gap = now - last_run
-                    if gap > threshold:
-                        hours_ago = round(gap.total_seconds() / 3600, 1)
-                        alerts.append(f"🔴 `{host}` `{script}` 已 {hours_ago}h 未成功运行（上次：{last_run_str}）")
-                    if info.get("status") == "failure":
-                        err = info.get("last_error_summary", "")
-                        alerts.append(f"🔴 `{host}` `{script}` 最近失败：{err}")
-                except (ValueError, TypeError):
-                    alerts.append(f"⚠️ `{host}` `{script}` 时间格式异常：{last_run_str}")
-        return alerts
+    local_last_run = {}
+    if LAST_RUN_FILE.exists():
+        try:
+            local_last_run = json.loads(LAST_RUN_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            alerts.append("⚠️ `last_run.json` 解析失败")
+            local_last_run = {}
 
-    if not LAST_RUN_FILE.exists():
-        return ["⚠️ `last_run.json` 不存在，所有脚本可能从未成功运行过"]
-
-    try:
-        data = json.loads(LAST_RUN_FILE.read_text())
-    except (json.JSONDecodeError, OSError):
-        return ["⚠️ `last_run.json` 解析失败"]
+    if local_last_run:
+        _merge_local_last_run(host_status, local_last_run)
 
     now = datetime.now()
     threshold = timedelta(hours=LIVENESS_THRESHOLD_HOURS)
 
+    for host, jobs in host_status.items():
+        for script in MONITORED_SCRIPTS:
+            info = jobs.get(script)
+            if not info:
+                continue
+            last_run_str = info.get("last_success_at") or info.get("last_finished_at")
+            if not last_run_str:
+                alerts.append(f"🔴 `{host}` `{script}` 无成功运行记录")
+                continue
+            try:
+                last_run = datetime.fromisoformat(last_run_str)
+                gap = now - last_run
+                if gap > threshold:
+                    hours_ago = round(gap.total_seconds() / 3600, 1)
+                    alerts.append(f"🔴 `{host}` `{script}` 已 {hours_ago}h 未成功运行（上次：{last_run_str}）")
+                if info.get("status") == "failure":
+                    err = info.get("last_error_summary", "")
+                    alerts.append(f"🔴 `{host}` `{script}` 最近失败：{err}")
+            except (ValueError, TypeError):
+                alerts.append(f"⚠️ `{host}` `{script}` 时间格式异常：{last_run_str}")
+
+    if not local_last_run:
+        if host_status:
+            return alerts
+        return ["⚠️ `last_run.json` 不存在，所有脚本可能从未成功运行过"]
+
     for script in MONITORED_SCRIPTS:
-        last_run_str = data.get(script)
+        if host_status.get(LOCAL_HOSTNAME, {}).get(script):
+            continue
+        last_run_str = local_last_run.get(script)
         if not last_run_str:
-            alerts.append(f"🔴 `{script}` 从未记录运行时间")
+            alerts.append(f"🔴 `{LOCAL_HOSTNAME}` `{script}` 从未记录运行时间")
             continue
         try:
             last_run = datetime.fromisoformat(last_run_str)
             gap = now - last_run
             if gap > threshold:
                 hours_ago = round(gap.total_seconds() / 3600, 1)
-                alerts.append(f"🔴 `{script}` 已 {hours_ago}h 未运行（上次：{last_run_str}）")
+                alerts.append(f"🔴 `{LOCAL_HOSTNAME}` `{script}` 已 {hours_ago}h 未运行（上次：{last_run_str}）")
         except (ValueError, TypeError):
-            alerts.append(f"⚠️ `{script}` 时间格式异常：{last_run_str}")
+            alerts.append(f"⚠️ `{LOCAL_HOSTNAME}` `{script}` 时间格式异常：{last_run_str}")
 
     return alerts
 
