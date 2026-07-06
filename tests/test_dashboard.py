@@ -577,20 +577,31 @@ class DashboardTests(unittest.TestCase):
         self.assertNotIn("AI 对话 / Dayflow", html)
         self.assertIn(">Dayflow<", html)
         self.assertIn(">AI 对话<", html)
-        self.assertIn('d="M120,113 L195,78"', html)
-        self.assertIn('d="M120,153 L195,85"', html)
-        self.assertIn('d="M120,193 L195,150"', html)
-        self.assertNotIn('d="M120,153 L195,150"', html)
+        self.assertIn("第一层：事实切片", html)
+        self.assertIn("第一层：对话图谱", html)
+        self.assertIn('d="M120,113 L195,75"', html)
+        self.assertIn('d="M120,153 L195,132"', html)
+        self.assertIn('d="M120,193 L195,205"', html)
         self.assertNotIn('d="M120,168 L195,150"', html)
 
     def test_dashboard_flow_treats_anda_as_graph_recall_not_layer2_peer(self):
         html = Path("scripts/dashboard_page.html").read_text()
 
-        self.assertIn("图谱索引：Anda", html)
-        self.assertIn("Hippocampus recall", html)
-        self.assertIn("第一方事实记忆 → 图谱索引 → 第二层综合", html)
-        self.assertIn('d="M470,145 C475,130 485,120 492,115"', html)
+        self.assertIn("Anda / recall", html)
+        self.assertIn("recall: Anda", html)
+        self.assertIn("AI 对话属于第一方事实记忆", html)
+        self.assertIn("它不是第二层", html)
+        self.assertIn('d="M340,132 L430,120"', html)
         self.assertNotIn(">Anda 知识图谱<", html)
+
+    def test_dashboard_flow_explains_arrow_styles(self):
+        html = Path("scripts/dashboard_page.html").read_text()
+
+        self.assertIn("写入 / 抽取", html)
+        self.assertIn("参与第二层综合", html)
+        self.assertIn("MCP 查询 / 召回", html)
+        self.assertIn("综合生成", html)
+        self.assertIn("search: L1/L2/L3", html)
 
     def test_dashboard_page_uses_asymmetric_overview_layout(self):
         html = Path("scripts/dashboard_page.html").read_text()

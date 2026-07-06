@@ -834,7 +834,7 @@ canvas {
 <div class="card" style="margin-bottom: 16px;">
   <h2>数据管道动线</h2>
   <div class="flow-container">
-    <svg viewBox="0 0 800 250" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 800 270" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
           <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)"></polygon>
@@ -860,71 +860,73 @@ canvas {
       <rect class="flow-node" x="10" y="175" width="110" height="36"></rect>
       <text class="flow-label" x="65" y="198">RSS / 公众号</text>
       
-      <!-- 第一层 -->
-      <rect class="flow-node" x="200" y="35" width="130" height="55"></rect>
-      <text class="flow-label" x="265" y="55">第一层：事实记忆</text>
-      <text class="flow-label-sm" x="265" y="70">memory_chunks</text>
-      <text class="flow-num" x="265" y="88" id="flow-l1">8874</text>
+      <!-- 第一层：事实切片 -->
+      <rect class="flow-node" x="200" y="30" width="140" height="55"></rect>
+      <text class="flow-label" x="270" y="50">第一层：事实切片</text>
+      <text class="flow-label-sm" x="270" y="65">memory_chunks</text>
+      <text class="flow-num" x="270" y="83" id="flow-l1">8874</text>
+      
+      <!-- 第一层：对话图谱 -->
+      <rect class="flow-node" x="200" y="105" width="140" height="55"></rect>
+      <text class="flow-label" x="270" y="125">第一层：对话图谱</text>
+      <text class="flow-label-sm" x="270" y="140">Anda / recall</text>
+      <text class="flow-num" x="270" y="158" id="flow-anda">220C / 530P</text>
       
       <!-- 第三层 -->
-      <rect class="flow-node" x="200" y="125" width="130" height="50"></rect>
-      <text class="flow-label" x="265" y="145">第三层：哈勃半径</text>
-      <text class="flow-label-sm" x="265" y="160">hubble_radius</text>
-      <text class="flow-num" x="265" y="175" id="flow-l3">15230</text>
+      <rect class="flow-node" x="200" y="180" width="140" height="50"></rect>
+      <text class="flow-label" x="270" y="200">第三层：哈勃半径</text>
+      <text class="flow-label-sm" x="270" y="215">hubble_radius</text>
+      <text class="flow-num" x="270" y="230" id="flow-l3">15230</text>
       
       <!-- 第二层 -->
-      <rect class="flow-node" x="430" y="55" width="130" height="55"></rect>
-      <text class="flow-label" x="495" y="75">第二层：结构知识</text>
-      <text class="flow-label-sm" x="495" y="90">wiki_entries</text>
-      <text class="flow-num" x="495" y="108" id="flow-l2">216</text>
-      
-      <!-- Anda 图谱索引 -->
-      <rect class="flow-node" x="375" y="145" width="145" height="55"></rect>
-      <text class="flow-label" x="447" y="166">图谱索引：Anda</text>
-      <text class="flow-label-sm" x="447" y="181">Hippocampus recall</text>
-      <text class="flow-num" x="447" y="198" id="flow-anda">220C / 530P</text>
+      <rect class="flow-node" x="435" y="90" width="140" height="60"></rect>
+      <text class="flow-label" x="505" y="112">第二层：结构知识</text>
+      <text class="flow-label-sm" x="505" y="128">wiki_entries</text>
+      <text class="flow-num" x="505" y="147" id="flow-l2">216</text>
       
       <!-- MCP 出口 -->
-      <rect class="flow-node-accent" x="635" y="80" width="140" height="55"></rect>
-      <text class="flow-label" x="705" y="103" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
-      <text class="flow-label-sm" x="705" y="120">搜索 / 召回</text>
+      <rect class="flow-node-accent" x="635" y="92" width="145" height="70"></rect>
+      <text class="flow-label" x="707" y="115" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
+      <text class="flow-label-sm" x="707" y="132">search: L1/L2/L3</text>
+      <text class="flow-label-sm" x="707" y="148">recall: Anda</text>
       
       <!-- 箭头 -->
-      <path class="flow-arrow" d="M120,33 L195,55"></path>
-      <path class="flow-arrow" d="M120,73 L195,65"></path>
-      <path class="flow-arrow" d="M120,113 L195,78"></path>
-      <path class="flow-arrow" d="M120,153 L195,85"></path>
-      <path class="flow-arrow" d="M120,193 L195,150"></path>
+      <path class="flow-arrow" d="M120,33 L195,52"></path>
+      <path class="flow-arrow" d="M120,73 L195,62"></path>
+      <path class="flow-arrow" d="M120,113 L195,75"></path>
+      <path class="flow-arrow" d="M120,153 L195,132"></path>
+      <path class="flow-arrow" d="M120,193 L195,205"></path>
       
-      <!-- 第一层 → 第二层 -->
-      <path class="flow-arrow-accent" d="M330,62 L425,82"></path>
+      <!-- 三类记忆参与第二层综合 -->
+      <path class="flow-arrow" d="M340,58 C380,64 405,85 430,108" style="stroke-dasharray: 4"></path>
+      <path class="flow-arrow" d="M340,132 L430,120" style="stroke-dasharray: 4"></path>
+      <path class="flow-arrow" d="M340,205 C385,185 405,150 430,132" style="stroke-dasharray: 4"></path>
       
-      <!-- 第三层 → 第二层（跨层综合） -->
-      <path class="flow-arrow" d="M330,150 C365,130 395,105 425,95" style="stroke-dasharray: 4"></path>
+      <!-- MCP 查询 / 召回出口 -->
+      <path class="flow-arrow-accent" d="M575,120 L630,124"></path>
+      <path class="flow-arrow-accent" d="M340,132 C455,176 545,170 630,148"></path>
       
-      <!-- 第一方事实记忆 → 图谱索引 → 第二层综合 -->
-      <path class="flow-arrow" d="M330,88 C350,125 355,150 370,165"></path>
-      <path class="flow-arrow" d="M470,145 C475,130 485,120 492,115" style="stroke-dasharray: 4"></path>
-      
-      <!-- → MCP -->
-      <path class="flow-arrow-accent" d="M560,82 L630,98"></path>
-      <path class="flow-arrow-accent" d="M520,173 C575,165 595,128 630,118"></path>
+      <!-- 箭头说明 -->
+      <text class="flow-label-sm" x="145" y="28">写入 / 抽取</text>
+      <text class="flow-label-sm" x="370" y="82">综合生成</text>
+      <text class="flow-label-sm" x="590" y="105">查询 / 召回</text>
     </svg>
   </div>
   <div class="legend">
     <div class="legend-item">
       <div class="legend-line" style="background: var(--text-muted)"></div>
-      <span>数据流</span>
+      <span>写入 / 抽取</span>
     </div>
     <div class="legend-item">
       <div class="legend-line-dashed" style="border-color: var(--text-muted)"></div>
-      <span>跨层综合</span>
+      <span>参与第二层综合</span>
     </div>
     <div class="legend-item">
       <div class="legend-line" style="background: var(--accent)"></div>
-      <span>核心链路</span>
+      <span>MCP 查询 / 召回</span>
     </div>
   </div>
+  <div class="chart-note">AI 对话属于第一方事实记忆，但当前落在 Anda 对话图谱里；它不是第二层。第二层 wiki_entries 是把事实切片、对话图谱和哈勃半径综合后的结构化条目。</div>
 </div>
 
 <p class="refresh-info">
