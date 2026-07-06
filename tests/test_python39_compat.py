@@ -10,6 +10,7 @@ class Python39CompatibilityTests(unittest.TestCase):
             "scripts/formation_quality.py",
             "scripts/run_due_jobs.py",
             "scripts/run_job.py",
+            "scripts/layer1_rag.py",
             "scripts/layer2_wiki.py",
             "scripts/layer3_wechat.py",
             "scripts/layer3_index.py",

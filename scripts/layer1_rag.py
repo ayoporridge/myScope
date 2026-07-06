@@ -7,6 +7,8 @@ layer1_rag.py
 注：flomo 采集在 Mac mini 上独立运行（layer1_flomo.py）
 """
 
+from __future__ import annotations
+
 import os
 import json
 import re
@@ -31,10 +33,11 @@ MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
 
 OPENCLI = "/Users/xz/.local/nodejs/bin/opencli"
-OBSIDIAN_VAULT = Path(os.environ.get("OBSIDIAN_VAULT", "/Users/xizhoumini/Documents/obsidian-default")).expanduser()
+OBSIDIAN_VAULT = Path(os.environ.get("OBSIDIAN_VAULT", str(Path.home() / "Desktop" / "obsidian-default"))).expanduser()
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_state.json"
 
 CHUNK_MAX = 200
+LLM_ERRORS: list[str] = []
 
 # 敏感内容过滤：跳过疑似 token/key/密码的文本
 SENSITIVE_PATTERNS = re.compile(
@@ -180,6 +183,8 @@ def slice_text(text: str) -> list[dict]:
     """用 DeepSeek 把长文本切成记忆碎片"""
     if len(text) < 30:
         return []
+    if LLM_ERRORS:
+        return []
     try:
         resp = llm.chat.completions.create(
             model=DEEPSEEK_MODEL,
@@ -195,7 +200,9 @@ def slice_text(text: str) -> list[dict]:
             return []
         return json.loads(match.group())
     except Exception as e:
-        print(f"    [切片失败] {e}")
+        summary = str(e).strip().replace("\n", " ")[:300]
+        LLM_ERRORS.append(summary)
+        print(f"    [切片失败] {summary}")
         return []
 
 
@@ -228,7 +235,7 @@ def push_chunks(docs: list[dict]):
 
 
 # ── 主流程 ────────────────────────────────────────────────
-def main():
+def main() -> int:
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始第一层 RAG 切片")
 
@@ -252,9 +259,10 @@ def main():
             "layer1_rag",
             raw_texts=0,
             chunks_produced=0,
+            llm_errors=0,
             run_duration_seconds=round(time.time() - start_time, 1),
         )
-        return
+        return 0
 
     # LLM 切片
     all_chunks = []
@@ -279,22 +287,24 @@ def main():
     # 写入 Meilisearch
     push_chunks(all_chunks)
 
-    # 更新状态
-    save_state({
-        "last_run_date": datetime.now().strftime("%Y-%m-%d"),
-        "last_run_ts": datetime.now().timestamp(),
-    })
-
-    # 记录指标
-    record_last_run("layer1_rag")
+    # LLM 失败时不推进 state/last_run，让后续夜间窗口可以重试同一批输入。
+    if not LLM_ERRORS:
+        save_state({
+            "last_run_date": datetime.now().strftime("%Y-%m-%d"),
+            "last_run_ts": datetime.now().timestamp(),
+        })
+        record_last_run("layer1_rag")
     record_metrics(
         "layer1_rag",
         raw_texts=len(all_texts),
         chunks_produced=len(all_chunks),
+        llm_errors=len(LLM_ERRORS),
+        llm_error_summary=LLM_ERRORS[0] if LLM_ERRORS else "",
         run_duration_seconds=round(time.time() - start_time, 1),
     )
     print(f"[完成] 共处理 {len(all_chunks)} 条记忆碎片")
+    return 2 if LLM_ERRORS else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
