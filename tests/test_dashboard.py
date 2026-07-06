@@ -165,6 +165,12 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual("red", self.dashboard._script_status_color("dayflow_sync", "success", 47.5))
         self.assertEqual("red", self.dashboard._script_status_color("memory_smoke_test", "failure", 1))
 
+    def test_status_hides_one_off_probe_and_macmini_run_due_jobs(self):
+        self.assertFalse(self.dashboard._status_job_visible("jodeMacBook-Air", "dayflow_sync_tcc_probe"))
+        self.assertFalse(self.dashboard._status_job_visible("xizhouMINIdeMac-mini", "run_due_jobs"))
+        self.assertTrue(self.dashboard._status_job_visible("jodeMacBook-Air", "run_due_jobs"))
+        self.assertTrue(self.dashboard._status_job_visible("xizhouMINIdeMac-mini", "layer3_index"))
+
     def test_content_date_prefers_domain_specific_fields(self):
         self.assertEqual(
             "2026-06-25",
@@ -209,7 +215,7 @@ class DashboardTests(unittest.TestCase):
         original_fetch = self.dashboard._fetch_meili_documents
         original_range = self.dashboard._date_range
         self.dashboard._CONTENT_THROUGHPUT_CACHE.clear()
-        self.dashboard._fetch_meili_documents = lambda index, headers: (docs[index], len(docs[index]))
+        self.dashboard._fetch_meili_documents = lambda index, headers, **kwargs: (docs[index], len(docs[index]))
         self.dashboard._date_range = lambda days: ["2026-06-25", "2026-06-26"]
         try:
             data = self.dashboard.get_content_throughput(2)
@@ -226,6 +232,30 @@ class DashboardTests(unittest.TestCase):
             ],
             data["rows"],
         )
+
+    def test_content_throughput_uses_full_fetch_cap(self):
+        docs = [{"date": "2026-06-26"}]
+        seen_caps = []
+
+        def fake_fetch(index, headers, *, cap):
+            seen_caps.append(cap)
+            return docs, len(docs)
+
+        original_fetch = self.dashboard._fetch_meili_documents
+        original_range = self.dashboard._date_range
+        self.dashboard._CONTENT_THROUGHPUT_CACHE.clear()
+        self.dashboard._fetch_meili_documents = fake_fetch
+        self.dashboard._date_range = lambda days: ["2026-06-26"]
+        try:
+            data = self.dashboard.get_content_throughput(1)
+        finally:
+            self.dashboard._fetch_meili_documents = original_fetch
+            self.dashboard._date_range = original_range
+            self.dashboard._CONTENT_THROUGHPUT_CACHE.clear()
+
+        self.assertTrue(data["ok"])
+        self.assertTrue(seen_caps)
+        self.assertTrue(all(cap > self.dashboard.BROWSE_FETCH_CAP for cap in seen_caps))
 
     def test_formation_quality_prefers_content_date_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -540,6 +570,16 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("openBrowse('anda_propositions', '图谱命题')", html)
         self.assertIn("source-chip", html)
         self.assertIn("source-name", html)
+
+    def test_dashboard_flow_keeps_first_party_sources_out_of_hubble_radius(self):
+        html = Path("scripts/dashboard_page.html").read_text()
+
+        self.assertNotIn("AI 对话 / Dayflow", html)
+        self.assertIn(">Dayflow<", html)
+        self.assertIn(">AI 对话<", html)
+        self.assertIn('d="M120,113 L195,78"', html)
+        self.assertIn('d="M120,153 L195,150"', html)
+        self.assertNotIn('d="M120,168 L195,150"', html)
 
     def test_dashboard_page_uses_asymmetric_overview_layout(self):
         html = Path("scripts/dashboard_page.html").read_text()

@@ -51,6 +51,7 @@ ANDA_DATA_DIR = Path(os.environ.get("ANDA_DATA_DIR", str(Path.home() / "anda-dat
 LOCAL_HOSTNAME = socket.gethostname().split(".")[0]
 BROWSE_FETCH_PAGE_SIZE = 1000
 BROWSE_FETCH_CAP = 20000
+THROUGHPUT_FETCH_CAP = 100000
 CONTENT_THROUGHPUT_CACHE_TTL_SECONDS = 300
 _CONTENT_THROUGHPUT_CACHE: dict[int, tuple[float, dict]] = {}
 
@@ -182,6 +183,14 @@ def _script_status_color(name: str, status: str | None, hours_ago: float) -> str
     return "red"
 
 
+def _status_job_visible(host: str, name: str) -> bool:
+    if name.endswith("_tcc_probe"):
+        return False
+    if name == "run_due_jobs" and "macbook" not in host.lower():
+        return False
+    return True
+
+
 def get_status() -> dict:
     """脚本存活状态"""
     now = datetime.now()
@@ -207,6 +216,8 @@ def get_status() -> dict:
         scripts = []
         for host, jobs in hosts.items():
             for name, info in jobs.items():
+                if not _status_job_visible(host, name):
+                    continue
                 last_str = (
                     info.get("last_success_at")
                     or info.get("last_finished_at")
@@ -430,12 +441,12 @@ def _page_payload(index: str, source: str, total: int, docs: list[dict], limit: 
     }
 
 
-def _fetch_meili_documents(index: str, headers: dict) -> tuple[list[dict], int] | None:
+def _fetch_meili_documents(index: str, headers: dict, *, cap: int = BROWSE_FETCH_CAP) -> tuple[list[dict], int] | None:
     docs = []
     total = None
     offset = 0
-    while len(docs) < BROWSE_FETCH_CAP:
-        page_limit = min(BROWSE_FETCH_PAGE_SIZE, BROWSE_FETCH_CAP - len(docs))
+    while len(docs) < cap:
+        page_limit = min(BROWSE_FETCH_PAGE_SIZE, cap - len(docs))
         r = http_req.get(
             f"{MEILI_URL}/indexes/{index}/documents",
             params={"limit": page_limit, "offset": offset},
@@ -500,7 +511,7 @@ def get_content_throughput(days: int = 7) -> dict:
 
     for layer, index in (("layer1", "memory_chunks"), ("layer2", "wiki_entries"), ("layer3", "hubble_radius")):
         try:
-            fetched = _fetch_meili_documents(index, headers)
+            fetched = _fetch_meili_documents(index, headers, cap=THROUGHPUT_FETCH_CAP)
         except Exception as exc:
             fetched = None
             errors[index] = str(exc)[:200]

@@ -322,13 +322,13 @@ canvas {
 .flow-container {
   position: relative;
   width: 100%;
-  min-height: 200px;
+  min-height: 230px;
   padding: 12px 0;
 }
 
 .flow-container svg {
   width: 100%;
-  height: 200px;
+  height: 230px;
 }
 
 .flow-node {
@@ -834,7 +834,7 @@ canvas {
 <div class="card" style="margin-bottom: 16px;">
   <h2>数据管道动线</h2>
   <div class="flow-container">
-    <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
           <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)"></polygon>
@@ -848,61 +848,64 @@ canvas {
       <rect class="flow-node" x="10" y="15" width="110" height="36"></rect>
       <text class="flow-label" x="65" y="38">微信 / Obsidian</text>
       
-      <rect class="flow-node" x="10" y="60" width="110" height="36"></rect>
-      <text class="flow-label" x="65" y="83">Flomo</text>
+      <rect class="flow-node" x="10" y="55" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="78">Flomo</text>
       
-      <rect class="flow-node" x="10" y="105" width="110" height="36"></rect>
-      <text class="flow-label" x="65" y="128">RSS / 公众号</text>
+      <rect class="flow-node" x="10" y="95" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="118">Dayflow</text>
       
-      <rect class="flow-node" x="10" y="150" width="110" height="36"></rect>
-      <text class="flow-label" x="65" y="173">AI 对话 / Dayflow</text>
+      <rect class="flow-node" x="10" y="135" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="158">RSS / 公众号</text>
+      
+      <rect class="flow-node" x="10" y="175" width="110" height="36"></rect>
+      <text class="flow-label" x="65" y="198">AI 对话</text>
       
       <!-- 第一层 -->
-      <rect class="flow-node" x="200" y="20" width="130" height="50"></rect>
-      <text class="flow-label" x="265" y="40">第一层：事实记忆</text>
-      <text class="flow-label-sm" x="265" y="55">memory_chunks</text>
-      <text class="flow-num" x="265" y="70" id="flow-l1">8874</text>
+      <rect class="flow-node" x="200" y="35" width="130" height="55"></rect>
+      <text class="flow-label" x="265" y="55">第一层：事实记忆</text>
+      <text class="flow-label-sm" x="265" y="70">memory_chunks</text>
+      <text class="flow-num" x="265" y="88" id="flow-l1">8874</text>
       
       <!-- 第三层 -->
-      <rect class="flow-node" x="200" y="100" width="130" height="50"></rect>
-      <text class="flow-label" x="265" y="120">第三层：哈勃半径</text>
-      <text class="flow-label-sm" x="265" y="135">hubble_radius</text>
-      <text class="flow-num" x="265" y="150" id="flow-l3">15230</text>
+      <rect class="flow-node" x="200" y="125" width="130" height="50"></rect>
+      <text class="flow-label" x="265" y="145">第三层：哈勃半径</text>
+      <text class="flow-label-sm" x="265" y="160">hubble_radius</text>
+      <text class="flow-num" x="265" y="175" id="flow-l3">15230</text>
       
       <!-- 第二层 -->
-      <rect class="flow-node" x="410" y="45" width="130" height="55"></rect>
-      <text class="flow-label" x="475" y="65">第二层：结构知识</text>
-      <text class="flow-label-sm" x="475" y="80">wiki_entries</text>
-      <text class="flow-num" x="475" y="98" id="flow-l2">216</text>
+      <rect class="flow-node" x="410" y="55" width="130" height="55"></rect>
+      <text class="flow-label" x="475" y="75">第二层：结构知识</text>
+      <text class="flow-label-sm" x="475" y="90">wiki_entries</text>
+      <text class="flow-num" x="475" y="108" id="flow-l2">216</text>
       
       <!-- Anda 图谱 -->
-      <rect class="flow-node" x="410" y="125" width="130" height="50"></rect>
-      <text class="flow-label" x="475" y="148">Anda 知识图谱</text>
-      <text class="flow-num" x="475" y="170" id="flow-anda">220C / 530P</text>
+      <rect class="flow-node" x="410" y="145" width="130" height="50"></rect>
+      <text class="flow-label" x="475" y="168">Anda 知识图谱</text>
+      <text class="flow-num" x="475" y="190" id="flow-anda">220C / 530P</text>
       
       <!-- MCP 出口 -->
-      <rect class="flow-node-accent" x="630" y="55" width="140" height="55"></rect>
-      <text class="flow-label" x="700" y="78" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
-      <text class="flow-label-sm" x="700" y="95">搜索 / 召回</text>
+      <rect class="flow-node-accent" x="630" y="80" width="140" height="55"></rect>
+      <text class="flow-label" x="700" y="103" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
+      <text class="flow-label-sm" x="700" y="120">搜索 / 召回</text>
       
       <!-- 箭头 -->
-      <path class="flow-arrow" d="M120,33 L195,42"></path>
-      <path class="flow-arrow" d="M120,78 L195,47"></path>
-      <path class="flow-arrow" d="M120,123 L195,120"></path>
-      <path class="flow-arrow" d="M120,168 L195,150"></path>
+      <path class="flow-arrow" d="M120,33 L195,55"></path>
+      <path class="flow-arrow" d="M120,73 L195,65"></path>
+      <path class="flow-arrow" d="M120,113 L195,78"></path>
+      <path class="flow-arrow" d="M120,153 L195,150"></path>
       
       <!-- 第一层 → 第二层 -->
-      <path class="flow-arrow-accent" d="M330,47 L405,68"></path>
+      <path class="flow-arrow-accent" d="M330,62 L405,82"></path>
       
       <!-- 第三层 → 第二层（跨层综合） -->
-      <path class="flow-arrow" d="M330,120 L405,90" style="stroke-dasharray: 4"></path>
+      <path class="flow-arrow" d="M330,150 L405,100" style="stroke-dasharray: 4"></path>
       
       <!-- 数据源 → Anda -->
-      <path class="flow-arrow" d="M120,168 C180,168 350,150 405,150"></path>
+      <path class="flow-arrow" d="M120,193 C190,205 335,170 405,170"></path>
       
       <!-- → MCP -->
-      <path class="flow-arrow-accent" d="M540,72 L625,78"></path>
-      <path class="flow-arrow-accent" d="M540,150 L625,90"></path>
+      <path class="flow-arrow-accent" d="M540,82 L625,98"></path>
+      <path class="flow-arrow-accent" d="M540,170 L625,118"></path>
     </svg>
   </div>
   <div class="legend">
