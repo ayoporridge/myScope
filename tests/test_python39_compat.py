@@ -12,6 +12,9 @@ class Python39CompatibilityTests(unittest.TestCase):
             "scripts/run_job.py",
             "scripts/layer2_wiki.py",
             "scripts/layer3_wechat.py",
+            "scripts/layer3_index.py",
+            "scripts/health_check.py",
+            "scripts/subscribe_podcasts.py",
             "scripts/ingest_wechat_url.py",
         ]
 

@@ -8,6 +8,8 @@ MyScope 健康检查：存活性 + 质量性 + 飞书告警
 告警方式：优先 Webhook（最可靠），备选 lark-cli。
 """
 
+from __future__ import annotations
+
 import json
 import os
 import shutil

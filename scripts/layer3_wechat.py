@@ -176,14 +176,19 @@ def main(argv: list[str] | None = None):
     docs = []
     for art in filtered:
         doc_id = hashlib.md5(art["url"].encode()).hexdigest()
+        title = art.get("title", "")
+        digest = art.get("digest", "")
+        published_at = art.get("time", "")
         docs.append({
             "id": doc_id,
-            "title": art.get("title", ""),
-            "content": art.get("digest", ""),
+            "title": title,
+            "content": digest,
+            "text": f"{title} {digest}".strip(),
             "url": art.get("url", ""),
             "source": f"wechat:{art.get('account', '')}",
             "author": art.get("account", ""),
-            "published_at": art.get("time", ""),
+            "published_at": published_at,
+            "date": published_at[:10],
             "indexed_at": datetime.now().isoformat(),
         })
 

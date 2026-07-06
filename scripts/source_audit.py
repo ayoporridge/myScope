@@ -26,17 +26,27 @@ TIERS_PATH = PROJECT_DIR / "source_tiers.yaml"
 REPORT_DIR = PROJECT_DIR / "reports"
 
 
+def _source_name(item) -> str:
+    if isinstance(item, dict):
+        return str(item.get("name") or item.get("title") or item.get("feed_url") or "")
+    return str(item)
+
+
 def load_subscription_sources(path: Path = SUBSCRIPTIONS_PATH) -> list[dict]:
     config = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     sources = []
     for account in config.get("wechat", {}).get("accounts", []) or []:
         sources.append({"kind": "wechat", "name": str(account), "id": f"wechat:{account}"})
     for podcast in config.get("xiaoyuzhou", {}).get("podcasts", []) or []:
-        name = podcast.get("title") if isinstance(podcast, dict) else podcast
-        sources.append({"kind": "podcast", "name": str(name), "id": f"podcast:{name}"})
+        if isinstance(podcast, dict) and podcast.get("skip"):
+            continue
+        name = _source_name(podcast)
+        sources.append({"kind": "podcast", "name": name, "id": f"podcast:{name}"})
     for feed in config.get("blogs", {}).get("feeds", []) or []:
-        name = feed.get("title") if isinstance(feed, dict) else feed
-        sources.append({"kind": "blog", "name": str(name), "id": f"blog:{name}"})
+        if isinstance(feed, dict) and feed.get("skip"):
+            continue
+        name = _source_name(feed)
+        sources.append({"kind": "blog", "name": name, "id": f"blog:{name}"})
     return sources
 
 

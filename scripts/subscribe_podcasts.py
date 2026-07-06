@@ -8,6 +8,8 @@
   python3 subscribe_podcasts.py --dry-run    # 只搜索预览，不实际订阅
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import time
@@ -89,19 +91,23 @@ def freshrss_auth() -> tuple[dict, str]:
 def freshrss_subscribe(feed_url: str, folder: str, headers: dict, t_token: str) -> bool:
     """订阅一个 feed，成功返回 True"""
     base = f"{FRESHRSS_URL}/api/greader.php"
-    resp = requests.post(
-        f"{base}/reader/api/0/subscription/edit",
-        headers=headers,
-        data={
-            "ac": "subscribe",
-            "s": f"feed/{feed_url}",
-            "a": f"user/-/label/{folder}",
-            "T": t_token,
-        },
-        timeout=10,
-    )
-    # 200 OK = 订阅成功；400 Bad Request = 已订阅过，也视为成功
-    return resp.status_code in (200, 400)
+    try:
+        resp = requests.post(
+            f"{base}/reader/api/0/subscription/edit",
+            headers=headers,
+            data={
+                "ac": "subscribe",
+                "s": f"feed/{feed_url}",
+                "a": f"user/-/label/{folder}",
+                "T": t_token,
+            },
+            timeout=30,
+        )
+        # 200 OK = 订阅成功；400 Bad Request = 已订阅过，也视为成功
+        return resp.status_code in (200, 400)
+    except requests.RequestException as e:
+        print(f"  ⚠️  FreshRSS 请求失败: {e}")
+        return False
 
 
 # ── 主流程 ───────────────────────────────────────────────────────

@@ -107,14 +107,17 @@ def extract_doc(url: str, page_url: str, page_text: str, content_limit: int = 12
     content = body or digest
     canonical = canonical_url(page_url or url, page_text)
     doc_id = hashlib.md5(canonical.encode()).hexdigest()
+    text = f"{title} {content}".strip()
     return {
         "id": doc_id,
         "title": title,
         "content": content[:content_limit],
+        "text": text[:content_limit],
         "url": canonical,
         "source": f"wechat:{author}",
         "author": author,
         "published_at": published_at,
+        "date": published_at[:10] if published_at else "",
         "indexed_at": datetime.now().isoformat(),
         "digest": digest,
         "original_url": url,

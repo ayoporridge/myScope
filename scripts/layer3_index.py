@@ -57,7 +57,8 @@ def freshrss_auth():
         data={
             "Email": FRESHRSS_USERNAME,
             "Passwd": FRESHRSS_API_PASS,
-        }
+        },
+        timeout=10,
     )
     r.raise_for_status()
     for line in r.text.splitlines():
@@ -77,16 +78,26 @@ def fetch_freshrss_items(auth_token, continuation=None, count=500):
     r = requests.get(
         f"{FRESHRSS_URL}/api/greader.php/reader/api/0/stream/contents/reading-list",
         headers=headers,
-        params=params
+        params=params,
+        timeout=30,
     )
     r.raise_for_status()
     return r.json()
 
+
+def _canonical_url(item):
+    canonical = item.get("canonical") or []
+    if canonical and isinstance(canonical[0], dict):
+        return canonical[0].get("href", "")
+    return ""
+
+
 def item_to_doc(item):
     """把 FreshRSS 条目转换为 Meilisearch 文档"""
     # 用 URL 哈希作为稳定 ID
-    url = item.get("canonical", [{}])[0].get("href", "")
+    url = _canonical_url(item)
     doc_id = hashlib.md5(url.encode()).hexdigest() if url else item.get("id", "")
+    title = item.get("title", "")
 
     content = ""
     if item.get("summary"):
@@ -97,12 +108,19 @@ def item_to_doc(item):
     content = re.sub(r"\s+", " ", content)[:2000]  # 限制长度
 
     published = item.get("published", 0)
+    published_at = datetime.fromtimestamp(published).isoformat() if published else ""
+    date = datetime.fromtimestamp(published).strftime("%Y-%m-%d") if published else ""
 
     return {
-        "id":     doc_id,
-        "text":   f"{item.get('title', '')} {content}".strip(),
-        "source": item.get("origin", {}).get("title", "rss"),
-        "date":   datetime.fromtimestamp(published).strftime("%Y-%m-%d") if published else "",
+        "id":           doc_id,
+        "title":        title,
+        "content":      content,
+        "text":         f"{title} {content}".strip(),
+        "url":          url,
+        "source":       item.get("origin", {}).get("title", "rss"),
+        "date":         date,
+        "published_at": published_at,
+        "indexed_at":   datetime.now().isoformat(),
     }
 
 

@@ -9,6 +9,12 @@ blogs:
     - name: "乔木的博客"
       feed_url: "https://blog.qiaomu.ai/feed.xml"
 
+    - name: "潮流周刊"
+      feed_url: "https://weekly.tw93.fun/rss.xml"
+
+    - name: "Tw93"
+      feed_url: "https://tw93.fun/feed.xml"
+
 # ── 小宇宙播客 ─────────────────────────────────────────
 # feed_url: 直接填 RSS 地址，脚本跳过搜索；不填则自动用 iTunes 搜索
 # skip: true → 暂时跳过（等待手动补充 feed_url）
@@ -64,9 +70,6 @@ xiaoyuzhou:
     - name: "PB计划"
       feed_url: "http://www.ximalaya.com/album/55740909.xml"
 
-    - name: "计算机历史博物馆"
-      feed_url: "http://192.168.1.21:1200/xiaoyuzhou/podcast/61b5f50c039364117719dcaa"
-
     - name: "信号与噪声"
       feed_url: "http://192.168.1.21:1200/xiaoyuzhou/podcast/6819d5a7e37664602a344e0e"
 
@@ -79,26 +82,7 @@ xiaoyuzhou:
 # 微信公众号（通过 opencli wx biz-articles 从本地缓存读取）
 wechat:
   accounts:
-    # 📰 新闻资讯
-    - 每日经济新闻
-    - 界面新闻
-    - 新闻广角
-    - 新华社
-    - 人民日报
-    - 财新mini+
-    - 新京报书评周刊
-    - 新华每日电讯
-    - 南周知道
-    - 每日人物
-    - 知乎日报
-    - 澎湃思想市场
-    - 国际新闻界
-    - 腾讯新闻
-    - 腾讯新闻派
-    - 新京报传媒研究
-    # 🤖 AI 与科技
-    - 巨量引擎营销观察
-    - 白鲸出海
+    # 来源：reports/source_inventory_2026-07-05.md 的「公众号」段
     - 腾讯研究院
     - APPSO
     - 非凡产研
@@ -111,116 +95,31 @@ wechat:
     - 卡尔的AI沃茨
     - 深思圈
     - 贝叶斯之美
-    # 🏃 运动赛事
-    - Jump x Switch
-    - 斐昕体育
-    - 跑野大爆炸RUNYEAH
-    - 耐吉赛事
-    - 汇跑赛事
-    - 朗途体育
-    - 悦野者越野
-    - 跑者日历RUN365
-    - 隆景体育
-    # 📚 人文社科
-    - 科普中国
-    - 再建巴别塔
-    - 社会学理论大缸
-    - 政治学人
-    - 把科学带回家
-    - 复旦人类学
-    - C计划
-    - 利维坦
-    - 知识分子
-    - 缸中之脑cybernetics
-    - 社會學會社
-    - 三联生活实验室
-    - 津津乐道播客
-    - 缪斯夫人
     - 离线Mook
     - 声动活泼
-    - 磨稿子
-    - 三明治
-    - 三联美食
-    # 🎨 文化艺术 / 生活方式
-    - 触乐
     - 卑贱的人类
     - 锦秋集
-    - 镜相工作室
     - 张海露Eric
-    - 死酒神
-    - 易白首
-    - 独霸上海的妖怪
     - 刘言飞语
-    - 市井觅食记
-    - 日食记
-    - 理想国imaginist
-    # 🌍 驻华使馆 / 国际文化
-    - Sixth Tone
     - FreeLab自由客实验室
-    - 北京俄罗斯文化中心
-    - 北京西班牙文化中心塞万提斯学院
-    - 澳大利亚驻华使领馆
-    - 法国文化
-    - Libertango Official
-    - 韩国旅游发展局北京办事处
-    - IICPechino
-    - japanembassy
-    - 别样瑞士SwissChat
-    # 🏛️ 政务 / 本地服务
-    - 北京114预约挂号
-    # 💼 商业 / 生活服务
-    - 企鹅吃喝指南
-    - 21世纪商业评论
-    - 有意思报告
-    - 旅行雷达助手
-    - 周末启程俱乐部
-    - 联合国妇女署
-    # 📦 其他 / 杂项
-    - 199IT互联网数据中心
-    - 39健康网
-    - i商周
     - 机器之心
-    - 云顶滑雪公园景区
     - 可望buffett
-    - 小茶和Frank
     - 不解难题
     - 民工看市
-    - Lens
-    - 传播学报
-    - 代码随想录
-    - 数字游民Junes
-    - 西宏168
-    - 翻滚坚果RollingNut
     - AGI Hunt
     - flomo浮墨笔记
     - 群响刘老板
     - 小鸟与好奇心
-    - LaCremerie法酪小屋
-    - 明室Lucida
     - 虹线
-    - 青衫Neuro
     - 青年志Youthology
     - 极昼工作室
     - 数字生命卡兹克
-    - 传媒茶话会
-    - 啊呜是大白兔呀
-    - With
-    - 单读
     - AGENT橘
-    - 玩主笔迹
-    - 同道学园
-    - 故事FM
     - 我要WhatYouNeed
     - 银河系洞察基地
-    - 冷眼看电视
     - 晚点LatePost
     - 随机波动StochasticVolatility
     - ProcessOn
-    - 廿一客21cake
     - 冷杉RECORD
-    - 文化客厅
-    - 智族Life
-    - 德国印象
-    - 深度训练营
     - 开眼Eyepetizer
     - 同代人
