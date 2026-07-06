@@ -55,6 +55,120 @@ class HealthCheckTests(unittest.TestCase):
 
             self.assertEqual([], alerts)
 
+    def test_quality_alerts_on_llm_errors(self):
+        health_check = importlib.import_module("scripts.health_check")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            today = RealDateTime.now().strftime("%Y-%m-%d")
+            (shared_metrics / "jodeMacBook-Air.jsonl").write_text(json.dumps({
+                "date": today,
+                "script": "layer2_wiki",
+                "timestamp": f"{today}T05:30:00",
+                "hostname": "jodeMacBook-Air",
+                "llm_errors": 1,
+                "llm_error_summary": "Insufficient Balance",
+                "wiki_entries_written": 0,
+            }) + "\n")
+
+            originals = {
+                "METRICS_SHARED_DIR": health_check.METRICS_SHARED_DIR,
+                "METRICS_FILE": health_check.METRICS_FILE,
+            }
+            health_check.METRICS_SHARED_DIR = shared_metrics
+            health_check.METRICS_FILE = logs / "missing_metrics.jsonl"
+            try:
+                alerts = health_check.check_quality()
+            finally:
+                for name, value in originals.items():
+                    setattr(health_check, name, value)
+
+        self.assertTrue(any("LLM 调用失败" in alert for alert in alerts))
+        self.assertTrue(any("Insufficient Balance" in alert for alert in alerts))
+
+    def test_quality_aggregates_layer1_sources_before_chunk_alert(self):
+        health_check = importlib.import_module("scripts.health_check")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            today = RealDateTime.now().strftime("%Y-%m-%d")
+            (shared_metrics / "layer1.jsonl").write_text(
+                json.dumps({
+                    "date": today,
+                    "script": "layer1_rag",
+                    "timestamp": f"{today}T05:00:00",
+                    "hostname": "jodeMacBook-Air",
+                    "raw_texts": 1,
+                    "chunks_produced": 0,
+                }) + "\n" +
+                json.dumps({
+                    "date": today,
+                    "script": "layer1_flomo",
+                    "timestamp": f"{today}T19:10:00",
+                    "hostname": "xizhouMINIdeMac-mini",
+                    "memos": 1,
+                    "chunks": 15,
+                }) + "\n"
+            )
+
+            originals = {
+                "METRICS_SHARED_DIR": health_check.METRICS_SHARED_DIR,
+                "METRICS_FILE": health_check.METRICS_FILE,
+            }
+            health_check.METRICS_SHARED_DIR = shared_metrics
+            health_check.METRICS_FILE = logs / "missing_metrics.jsonl"
+            try:
+                alerts = health_check.check_quality()
+            finally:
+                for name, value in originals.items():
+                    setattr(health_check, name, value)
+
+        self.assertFalse(any("新增切片仅" in alert for alert in alerts))
+
+    def test_quality_alerts_on_flomo_collect_errors(self):
+        health_check = importlib.import_module("scripts.health_check")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            today = RealDateTime.now().strftime("%Y-%m-%d")
+            (shared_metrics / "xizhouMINIdeMac-mini.jsonl").write_text(json.dumps({
+                "date": today,
+                "script": "layer1_flomo",
+                "timestamp": f"{today}T19:10:00",
+                "hostname": "xizhouMINIdeMac-mini",
+                "memos": 0,
+                "chunks": 0,
+                "collect_errors": 1,
+                "collect_error_summary": "opencli open failed",
+            }) + "\n")
+
+            originals = {
+                "METRICS_SHARED_DIR": health_check.METRICS_SHARED_DIR,
+                "METRICS_FILE": health_check.METRICS_FILE,
+            }
+            health_check.METRICS_SHARED_DIR = shared_metrics
+            health_check.METRICS_FILE = logs / "missing_metrics.jsonl"
+            try:
+                alerts = health_check.check_quality()
+            finally:
+                for name, value in originals.items():
+                    setattr(health_check, name, value)
+
+        self.assertTrue(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
+        self.assertTrue(any("opencli open failed" in alert for alert in alerts))
+
 
 if __name__ == "__main__":
     unittest.main()

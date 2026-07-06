@@ -103,6 +103,22 @@ def _merge_local_last_run(host_status: dict, local_last_run: dict):
         local_jobs[script] = entry
 
 
+def _latest_metrics_by_job(metrics: list[dict]) -> dict[tuple[str, str], dict]:
+    by_job = {}
+    for metric in metrics:
+        key = (metric.get("hostname", "unknown"), metric.get("script", "unknown"))
+        current = by_job.get(key)
+        if not current or str(metric.get("timestamp", "")) > str(current.get("timestamp", "")):
+            by_job[key] = metric
+    return by_job
+
+
+def _layer1_chunks(metric: dict) -> int:
+    if metric.get("script") == "layer1_flomo":
+        return int(metric.get("chunks", 0) or 0)
+    return int(metric.get("chunks_produced", 0) or 0)
+
+
 # ── 飞书告警推送 ─────────────────────────────────────────────
 def send_feishu_alert(message: str):
     """推送飞书告警。优先 Webhook，备选 lark-cli。"""
@@ -324,17 +340,22 @@ def check_quality() -> list[str]:
                     f"🔴 `{host}` hippocampus_formation 提交失败（{batches_success}/{batches_total} 批成功）"
                 )
 
-    # 检查 2：memory_chunks 新增（跨机器聚合）
-    rag_metrics = [
+    # 检查 2：memory_chunks 新增（Layer 1 跨机器聚合）
+    layer1_metrics = [
         m for m in recent_metrics
-        if m.get("script") == "layer1_rag"
+        if m.get("script") in ("layer1_rag", "layer1_flomo")
         and m.get("date") in (today, yesterday)
     ]
-    if rag_metrics:
-        total_chunks = sum(m.get("chunks_produced", 0) for m in rag_metrics)
+    if layer1_metrics:
+        latest_by_job = _latest_metrics_by_job(layer1_metrics)
+        total_chunks = sum(_layer1_chunks(m) for m in latest_by_job.values())
         if total_chunks < 3:
+            detail = "、".join(
+                f"{script}@{host}={_layer1_chunks(metric)}"
+                for (host, script), metric in sorted(latest_by_job.items())
+            )
             alerts.append(
-                f"🟡 `layer1_rag` 新增切片仅 {total_chunks} 条（阈值 3）"
+                f"🟡 `layer1` 新增切片仅 {total_chunks} 条（阈值 3）[{detail}]"
             )
 
     # 检查 3：LLM provider 是否失败（余额、Key 或模型服务异常）
