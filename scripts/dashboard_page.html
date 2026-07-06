@@ -834,7 +834,7 @@ canvas {
 <div class="card" style="margin-bottom: 16px;">
   <h2>数据管道动线</h2>
   <div class="flow-container">
-    <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 800 250" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
           <polygon points="0 0, 8 3, 0 6" fill="var(--text-muted)"></polygon>
@@ -855,10 +855,10 @@ canvas {
       <text class="flow-label" x="65" y="118">Dayflow</text>
       
       <rect class="flow-node" x="10" y="135" width="110" height="36"></rect>
-      <text class="flow-label" x="65" y="158">RSS / 公众号</text>
+      <text class="flow-label" x="65" y="158">AI 对话</text>
       
       <rect class="flow-node" x="10" y="175" width="110" height="36"></rect>
-      <text class="flow-label" x="65" y="198">AI 对话</text>
+      <text class="flow-label" x="65" y="198">RSS / 公众号</text>
       
       <!-- 第一层 -->
       <rect class="flow-node" x="200" y="35" width="130" height="55"></rect>
@@ -873,39 +873,42 @@ canvas {
       <text class="flow-num" x="265" y="175" id="flow-l3">15230</text>
       
       <!-- 第二层 -->
-      <rect class="flow-node" x="410" y="55" width="130" height="55"></rect>
-      <text class="flow-label" x="475" y="75">第二层：结构知识</text>
-      <text class="flow-label-sm" x="475" y="90">wiki_entries</text>
-      <text class="flow-num" x="475" y="108" id="flow-l2">216</text>
+      <rect class="flow-node" x="430" y="55" width="130" height="55"></rect>
+      <text class="flow-label" x="495" y="75">第二层：结构知识</text>
+      <text class="flow-label-sm" x="495" y="90">wiki_entries</text>
+      <text class="flow-num" x="495" y="108" id="flow-l2">216</text>
       
-      <!-- Anda 图谱 -->
-      <rect class="flow-node" x="410" y="145" width="130" height="50"></rect>
-      <text class="flow-label" x="475" y="168">Anda 知识图谱</text>
-      <text class="flow-num" x="475" y="190" id="flow-anda">220C / 530P</text>
+      <!-- Anda 图谱索引 -->
+      <rect class="flow-node" x="375" y="145" width="145" height="55"></rect>
+      <text class="flow-label" x="447" y="166">图谱索引：Anda</text>
+      <text class="flow-label-sm" x="447" y="181">Hippocampus recall</text>
+      <text class="flow-num" x="447" y="198" id="flow-anda">220C / 530P</text>
       
       <!-- MCP 出口 -->
-      <rect class="flow-node-accent" x="630" y="80" width="140" height="55"></rect>
-      <text class="flow-label" x="700" y="103" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
-      <text class="flow-label-sm" x="700" y="120">搜索 / 召回</text>
+      <rect class="flow-node-accent" x="635" y="80" width="140" height="55"></rect>
+      <text class="flow-label" x="705" y="103" style="fill: var(--accent); font-weight: 600;">MCP 记忆接口</text>
+      <text class="flow-label-sm" x="705" y="120">搜索 / 召回</text>
       
       <!-- 箭头 -->
       <path class="flow-arrow" d="M120,33 L195,55"></path>
       <path class="flow-arrow" d="M120,73 L195,65"></path>
       <path class="flow-arrow" d="M120,113 L195,78"></path>
-      <path class="flow-arrow" d="M120,153 L195,150"></path>
+      <path class="flow-arrow" d="M120,153 L195,85"></path>
+      <path class="flow-arrow" d="M120,193 L195,150"></path>
       
       <!-- 第一层 → 第二层 -->
-      <path class="flow-arrow-accent" d="M330,62 L405,82"></path>
+      <path class="flow-arrow-accent" d="M330,62 L425,82"></path>
       
       <!-- 第三层 → 第二层（跨层综合） -->
-      <path class="flow-arrow" d="M330,150 L405,100" style="stroke-dasharray: 4"></path>
+      <path class="flow-arrow" d="M330,150 C365,130 395,105 425,95" style="stroke-dasharray: 4"></path>
       
-      <!-- 数据源 → Anda -->
-      <path class="flow-arrow" d="M120,193 C190,205 335,170 405,170"></path>
+      <!-- 第一方事实记忆 → 图谱索引 → 第二层综合 -->
+      <path class="flow-arrow" d="M330,88 C350,125 355,150 370,165"></path>
+      <path class="flow-arrow" d="M470,145 C475,130 485,120 492,115" style="stroke-dasharray: 4"></path>
       
       <!-- → MCP -->
-      <path class="flow-arrow-accent" d="M540,82 L625,98"></path>
-      <path class="flow-arrow-accent" d="M540,170 L625,118"></path>
+      <path class="flow-arrow-accent" d="M560,82 L630,98"></path>
+      <path class="flow-arrow-accent" d="M520,173 C575,165 595,128 630,118"></path>
     </svg>
   </div>
   <div class="legend">

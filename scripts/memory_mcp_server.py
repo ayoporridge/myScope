@@ -4,7 +4,7 @@ memory_mcp_server.py
 myScope MCP Server — 让 Claude Code 在对话中自动查询个人记忆
 暴露两个 tool：
   - search_memory : Meilisearch 关键词搜索（第一层 + 第三层）
-  - recall_memory : Anda Hippocampus 图谱召回（第二层）
+  - recall_memory : Anda Hippocampus 图谱召回（深度上下文）
 """
 
 import os
