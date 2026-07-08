@@ -25,6 +25,35 @@ LOGS_DIR = PROJECT_DIR / "logs"
 LOCKS_DIR = LOGS_DIR / "locks"
 
 
+def _read_lock_pid(lock_path: Path) -> int | None:
+    try:
+        first_line = lock_path.read_text(encoding="utf-8").splitlines()[0]
+        return int(first_line)
+    except (IndexError, OSError, ValueError):
+        return None
+
+
+def _pid_running(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def _remove_stale_lock(lock_path: Path) -> bool:
+    pid = _read_lock_pid(lock_path)
+    if pid is not None and _pid_running(pid):
+        return False
+    try:
+        lock_path.unlink()
+        return True
+    except OSError:
+        return False
+
+
 def acquire_lock(name: str) -> Path | None:
     LOCKS_DIR.mkdir(parents=True, exist_ok=True)
     lock_path = LOCKS_DIR / f"{name}.lock"
@@ -34,6 +63,14 @@ def acquire_lock(name: str) -> Path | None:
             f.write(f"{os.getpid()}\n{datetime.now().isoformat(timespec='seconds')}\n")
         return lock_path
     except FileExistsError:
+        if _remove_stale_lock(lock_path):
+            try:
+                fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(f"{os.getpid()}\n{datetime.now().isoformat(timespec='seconds')}\n")
+                return lock_path
+            except FileExistsError:
+                return None
         return None
 
 
