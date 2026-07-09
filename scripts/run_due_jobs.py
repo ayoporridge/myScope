@@ -137,7 +137,13 @@ def plan_due_jobs(
     return planned
 
 
-def run_due_jobs(machine: str, *, dry_run: bool = False, force: bool = False) -> int:
+def run_due_jobs(
+    machine: str,
+    *,
+    dry_run: bool = False,
+    force: bool = False,
+    skip_noop_metrics: bool = False,
+) -> int:
     hostname = socket.gethostname().split(".")[0]
     planned = plan_due_jobs(machine, hostname=hostname, force=force)
     print(json.dumps({
@@ -146,9 +152,12 @@ def run_due_jobs(machine: str, *, dry_run: bool = False, force: bool = False) ->
         "planned": [job.name for job in planned],
         "dry_run": dry_run,
         "force": force,
+        "skip_noop_metrics": skip_noop_metrics,
     }, ensure_ascii=False), flush=True)
 
     if dry_run:
+        return 0
+    if not planned and skip_noop_metrics:
         return 0
 
     failures = 0
@@ -209,8 +218,18 @@ def main() -> int:
     parser.add_argument("--machine", choices=sorted(MACHINE_JOBS), required=True)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--skip-noop-metrics",
+        action="store_true",
+        help="Do not write run_due_jobs/dashboard sync metrics when no jobs are due.",
+    )
     args = parser.parse_args()
-    return run_due_jobs(args.machine, dry_run=args.dry_run, force=args.force)
+    return run_due_jobs(
+        args.machine,
+        dry_run=args.dry_run,
+        force=args.force,
+        skip_noop_metrics=args.skip_noop_metrics,
+    )
 
 
 if __name__ == "__main__":

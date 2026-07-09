@@ -2,7 +2,7 @@
 
 **更新日期**: 2026-06-24
 **触发方式**: `run_due_jobs.py` catch-up runner（launchd/cron 均可触发）
-**推荐频率**: MacBook 登录时 + 每小时检查一次
+**推荐频率**: MacBook 登录时 + 每 5 分钟轻量检查一次 + 06:07 固定触发；每天 06:05 唤醒一次
 
 ---
 
@@ -12,7 +12,7 @@
 
 **修正后的方案**: 不再依赖 cron 自己补跑。由 `scripts/run_due_jobs.py` 读取 `logs/job_status.json` / `logs/last_run.json`，判断哪些任务超过间隔未成功运行，再逐个补跑。
 
-cron 或 launchd 只负责“经常唤起检查器”，真正的补跑判断由 runner 完成。
+cron 或 launchd 只负责“经常唤起检查器”，真正的补跑判断由 runner 完成。MacBook 还通过 `pmset wakeorpoweron` 每天 06:05 唤醒一次，确保数据仍在本机时也能赶在 06:30 健康检查前补跑。
 
 ---
 
@@ -81,4 +81,12 @@ cat /Users/xz/Documents/myScope/logs/last_run.json
 bash /Users/xz/Documents/myScope/launchd/install.sh macbook
 ```
 
-MacBook 现在默认只安装 `com.myscope.run-due-jobs`，登录时运行一次，并每小时检查一次是否需要补跑。
+MacBook 现在默认只安装 `com.myscope.run-due-jobs`，登录时运行一次，每 5 分钟轻量检查一次，并在 06:07 固定触发一次；无任务到期时不写指标。
+
+为了处理睡眠导致的夜间漏跑，还需要安装每日唤醒：
+
+```bash
+sudo bash /Users/xz/Documents/myScope/scripts/install_macbook_wake_schedule.sh
+```
+
+`run_due_jobs` 会继续遵守 DeepSeek 时间窗：`layer1_rag`、`layer1_flomo`、`layer2_wiki` 只在 `19:00-08:00` 之间启动。

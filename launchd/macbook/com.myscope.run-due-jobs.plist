@@ -21,13 +21,24 @@
     <string>MYSCOPE_DIR/scripts/run_due_jobs.py</string>
     <string>--machine</string>
     <string>macbook</string>
+    <string>--skip-noop-metrics</string>
   </array>
 
   <key>RunAtLoad</key>
   <true/>
 
   <key>StartInterval</key>
-  <integer>3600</integer>
+  <integer>300</integer>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key>
+      <integer>6</integer>
+      <key>Minute</key>
+      <integer>7</integer>
+    </dict>
+  </array>
 
   <key>StandardOutPath</key>
   <string>MYSCOPE_DIR/logs/run_due_jobs.log</string>

@@ -1,6 +1,7 @@
 import importlib
 import unittest
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 
 class RunDueJobsTests(unittest.TestCase):
@@ -67,6 +68,16 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertTrue(self.runner.is_deepseek_window(now=datetime(2026, 6, 25, 7, 59, 0)))
         self.assertFalse(self.runner.is_deepseek_window(now=datetime(2026, 6, 25, 8, 0, 0)))
         self.assertFalse(self.runner.is_deepseek_window(now=datetime(2026, 6, 24, 18, 59, 0)))
+
+    def test_skip_noop_metrics_leaves_status_unchanged_when_nothing_due(self):
+        with patch.object(self.runner, "plan_due_jobs", return_value=[]), \
+             patch.object(self.runner, "record_metrics") as record_metrics, \
+             patch.object(self.runner, "record_job_result") as record_job_result:
+            exit_code = self.runner.run_due_jobs("macbook", skip_noop_metrics=True)
+
+        self.assertEqual(0, exit_code)
+        record_metrics.assert_not_called()
+        record_job_result.assert_not_called()
 
 
 if __name__ == "__main__":

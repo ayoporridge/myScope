@@ -16,7 +16,9 @@
 
 ### macbook/ — catch-up runner
 
-登录时运行，并每小时检查一次。实际执行由 `run_due_jobs.py --machine macbook` 判断，不依赖 launchd/cron 补偿错过的固定时间点。
+登录时运行，每 5 分钟轻量检查一次，并在 06:07 固定触发一次。实际执行由 `run_due_jobs.py --machine macbook` 判断，不依赖 launchd/cron 补偿错过的固定时间点。无任务到期时不会写 run_due_jobs 指标，避免高频探测污染 metrics。
+
+MacBook 还可以安装每日 06:05 的系统唤醒计划，让它赶在 06:30 健康检查前补跑本机数据任务。
 
 DeepSeek 相关任务（`layer1_rag`、`layer1_flomo`、`layer2_wiki`）只会在 `19:00` 到次日 `08:00` 之间由 runner 启动。
 
@@ -32,6 +34,9 @@ bash launchd/install.sh macmini
 
 # MacBook 上（只安装 run-due-jobs runner）
 bash launchd/install.sh macbook
+
+# MacBook 上（安装每日 06:05 唤醒，需要管理员权限）
+sudo bash scripts/install_macbook_wake_schedule.sh
 ```
 
 脚本会自动：

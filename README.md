@@ -30,7 +30,7 @@
 ┌─────────────────────────────────────────────────────────┐
 │  MacBook（日间使用，每天开机）                             │
 │                                                         │
-│  catch-up runner（登录时 + 每小时检查）：                    │
+│  catch-up runner（登录时 + 每 5 分钟轻量检查）：              │
 │    run_due_jobs.py --machine macbook                     │
 │      dayflow_sync.py            屏幕活动 → memory_chunks  │
 │      layer3_wechat.py           公众号文章 → hubble_radius│
@@ -129,7 +129,8 @@ bash launchd/install.sh macmini  # 注册定时任务
 git clone https://github.com/ayoporridge/myScope.git
 cd myScope
 pip3 install -r requirements.txt
-bash launchd/install.sh macbook  # 注册开机任务
+bash launchd/install.sh macbook                    # 注册开机/醒后补跑检查
+sudo bash scripts/install_macbook_wake_schedule.sh # 每天 06:05 唤醒一次
 ```
 
 安装后两台机器共用同一个 `.env`（手动复制或通过 git 同步后填写）。
@@ -152,7 +153,8 @@ bash launchd/install.sh macbook  # 注册开机任务
 
 | 触发 | 脚本 | 说明 |
 |------|------|------|
-| 登录时 + 每小时 | `run_due_jobs.py --machine macbook` | 根据 `last_success_at` 补跑到期任务 |
+| 登录时 + 每 5 分钟 + 06:07 | `run_due_jobs.py --machine macbook --skip-noop-metrics` | 根据 `last_success_at` 补跑到期任务；无任务时不写指标 |
+| 每天 06:05 | macOS `pmset wakeorpoweron` | 唤醒 MacBook，赶在 06:30 健康检查前补跑 |
 | 到期时 | `dayflow_sync.py` | Dayflow → `memory_chunks` |
 | 到期时 | `layer3_wechat.py` | 公众号文章 → `hubble_radius` |
 | 到期时 | `layer1_rag.py` | 微信+Obsidian → `memory_chunks`（仅 19:00-08:00） |
