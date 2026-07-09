@@ -402,6 +402,28 @@ def _doc_freshness(doc: dict) -> datetime:
     return max(candidates) if candidates else datetime.min
 
 
+def _doc_content_time(doc: dict, index: str) -> datetime:
+    fields_by_index = {
+        "memory_chunks": ("date", "start_ts", "end_ts", "created_at", "timestamp", "indexed_at"),
+        "wiki_entries": ("updated_at", "created_at", "date", "timestamp"),
+        "hubble_radius": ("published_at", "date", "created_at", "timestamp", "indexed_at"),
+    }
+    fields = fields_by_index.get(index, ("date", "updated_at", "created_at", "published_at", "timestamp"))
+    metadata = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
+    for field in fields:
+        for value in (doc.get(field), metadata.get(field)):
+            parsed = _parse_doc_time(value)
+            if parsed != datetime.min:
+                return parsed
+    return datetime.min
+
+
+def _browse_sort_time(doc: dict, index: str) -> datetime:
+    if index == "hubble_radius":
+        return _doc_content_time(doc, index)
+    return _doc_freshness(doc)
+
+
 def _browse_meta(index: str) -> dict:
     return INDEX_META.get(index, {"title": index, "summary": "", "sources": [], "pipeline": "", "stat_logic": ""})
 
@@ -475,19 +497,8 @@ def _date_range(days: int, *, now: datetime | None = None) -> list[str]:
 
 
 def _doc_content_date(doc: dict, index: str) -> str:
-    fields_by_index = {
-        "memory_chunks": ("date", "start_ts", "end_ts", "created_at", "timestamp", "indexed_at"),
-        "wiki_entries": ("updated_at", "created_at", "date", "timestamp"),
-        "hubble_radius": ("published_at", "date", "created_at", "timestamp", "indexed_at"),
-    }
-    fields = fields_by_index.get(index, ("date", "updated_at", "created_at", "published_at", "timestamp"))
-    metadata = doc.get("metadata") if isinstance(doc.get("metadata"), dict) else {}
-    for field in fields:
-        for value in (doc.get(field), metadata.get(field)):
-            parsed = _parse_doc_time(value)
-            if parsed != datetime.min:
-                return parsed.date().isoformat()
-    return ""
+    parsed = _doc_content_time(doc, index)
+    return parsed.date().isoformat() if parsed != datetime.min else ""
 
 
 def get_content_throughput(days: int = 7) -> dict:
@@ -655,7 +666,7 @@ def _browse_meili_documents(index: str, query: str, limit: int, offset: int = 0)
         if not fetched:
             return None
         docs, total = fetched
-        docs = sorted(docs, key=_doc_freshness, reverse=True)
+        docs = sorted(docs, key=lambda doc: _browse_sort_time(doc, index), reverse=True)
         return _page_payload(index, "meili", total, docs, limit, offset)
     except Exception:
         return None
@@ -1220,6 +1231,8 @@ def browse_index(index: str, query: str = "", limit: int = 20, offset: int = 0) 
             if r.status_code == 200:
                 data = r.json()
                 results = data.get("results", [])
+                if index == "hubble_radius":
+                    results = sorted(results, key=lambda doc: _browse_sort_time(doc, index), reverse=True)
                 total = data.get("total", len(results))
                 next_offset = offset + len(results)
                 return {

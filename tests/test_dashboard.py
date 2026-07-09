@@ -322,6 +322,48 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(["new wiki", "middle wiki"], [r["title"] for r in data["results"]])
         self.assertIn("/indexes/wiki_entries/documents", FakeRequests.calls[0])
 
+    def test_browse_hubble_radius_sorts_by_published_time_not_ingest_time(self):
+        docs = [
+            {
+                "title": "old article indexed late",
+                "published_at": "2026-06-20T08:00:00",
+                "indexed_at": "2026-06-30T08:00:00",
+            },
+            {
+                "title": "new article indexed early",
+                "published_at": "2026-06-24T09:00:00",
+                "indexed_at": "2026-06-24T10:00:00",
+            },
+            {
+                "title": "middle article by date",
+                "date": "2026-06-22",
+                "indexed_at": "2026-06-29T10:00:00",
+            },
+        ]
+
+        class Response:
+            status_code = 200
+
+            def json(self):
+                return {"results": docs, "total": len(docs)}
+
+        class FakeRequests:
+            @staticmethod
+            def get(url, **kwargs):
+                return Response()
+
+        original_http = self.dashboard.http_req
+        self.dashboard.http_req = FakeRequests
+        try:
+            data = self.dashboard.browse_index("hubble_radius", "", 3)
+        finally:
+            self.dashboard.http_req = original_http
+
+        self.assertEqual(
+            ["new article indexed early", "middle article by date", "old article indexed late"],
+            [r["title"] for r in data["results"]],
+        )
+
     def test_browse_index_samples_enough_documents_before_sorting_by_freshness(self):
         docs = [
             {"title": f"old {i}", "updated_at": "2026-06-10T08:00:00"}

@@ -1314,7 +1314,10 @@ function compactNumber(value) {
 }
 
 function itemDate(item) {
-  const raw = item.updated_at || item.created_at || item.published_at || item.date || item.timestamp || item.end_ts || item.start_ts || '';
+  const metadata = item.metadata || {};
+  const raw = currentBrowseIndex === 'hubble_radius'
+    ? (item.published_at || metadata.published_at || item.date || metadata.date || item.created_at || metadata.created_at || item.timestamp || metadata.timestamp || item.indexed_at || metadata.indexed_at || '')
+    : (item.updated_at || metadata.updated_at || item.created_at || metadata.created_at || item.published_at || metadata.published_at || item.date || metadata.date || item.timestamp || metadata.timestamp || item.end_ts || metadata.end_ts || item.start_ts || metadata.start_ts || '');
   if (typeof raw === 'number') {
     const ts = raw > 10000000000 ? raw : raw * 1000;
     return new Date(ts).toISOString().slice(0, 16);
