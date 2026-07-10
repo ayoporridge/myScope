@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 """
 layer1_flomo.py
 第一层补充：flomo 采集（Mac mini 端）
-opencli browser 自动化 → DeepSeek 切片 → Meilisearch memory_chunks
-每天凌晨 4:30 运行（MacBook L1 之前）
-部署位置：Mac mini ~/Documents/myScope/scripts/
+OpenCLI 结构化采集 → 稳定 ID 文档 → Meilisearch memory_chunks
+每天 19:10 运行
 """
 
 import os
@@ -13,23 +14,22 @@ import re
 import hashlib
 import shutil
 import subprocess
+import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
+from html import unescape
+from html.parser import HTMLParser
 from pathlib import Path
 from dotenv import load_dotenv
-from openai import OpenAI
 import requests
 from _metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-DEEPSEEK_KEY = os.environ["DEEPSEEK_API_KEY"]
-DEEPSEEK_BASE_URL = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
-DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 MEMORY_URL   = os.environ.get("MEMORY_API_URL", "https://memory.arjo.us.ci")
 MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
-
-llm = OpenAI(api_key=DEEPSEEK_KEY, base_url=DEEPSEEK_BASE_URL)
+MEILI_URL = os.environ.get("MEILI_URL", "http://localhost:7700")
+MEILI_MASTER_KEY = os.environ.get("MEILI_MASTER_KEY", "")
 
 def resolve_opencli() -> str:
     """Find opencli without assuming the macOS user or install prefix."""
@@ -56,21 +56,38 @@ OPENCLI_EXTENSION_ID = os.environ.get("OPENCLI_EXTENSION_ID", "ildkmabpimmkaedii
 OPENCLI_CHROME_APP = os.environ.get("OPENCLI_CHROME_APP", "Google Chrome")
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_flomo_state.json"
 
-CHUNK_MAX = 200
-LLM_ERRORS: list[str] = []
-COLLECT_ERRORS: list[str] = []
+PAGE_LIMIT = 200
 
 
 # ── 状态管理 ────────────────────────────────────────────────
 def load_state() -> dict:
-    if STATE_FILE.exists():
-        return json.loads(STATE_FILE.read_text())
-    return {}
+    try:
+        data = json.loads(STATE_FILE.read_text()) if STATE_FILE.exists() else {}
+    except (json.JSONDecodeError, OSError):
+        data = {}
+    if data.get("version") != 2:
+        return {"version": 2, "cursor_updated_at": 0, "seen_memo_ids": []}
+    return {
+        **data,
+        "version": 2,
+        "cursor_updated_at": int(data.get("cursor_updated_at", 0) or 0),
+        "seen_memo_ids": sorted(set(map(str, data.get("seen_memo_ids", [])))),
+    }
 
 
-def save_state(state: dict):
+def save_state(state: dict) -> None:
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(state, ensure_ascii=False, indent=2))
+    fd, tmp_path = tempfile.mkstemp(dir=str(STATE_FILE.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(state, handle, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, STATE_FILE)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def is_browser_bridge_connected() -> bool:
@@ -120,246 +137,250 @@ def wake_browser_bridge() -> bool:
     return is_browser_bridge_connected()
 
 
-# ── flomo 采集（opencli browser 自动化） ────────────────────
-def collect_flomo() -> list[dict]:
-    """通过 opencli browser 从 flomo 网页提取 memo"""
-    print("  [flomo] 开始浏览器自动化...")
-    texts = []
+# ── Flomo 结构化采集 ────────────────────────────────────────
+class PlainTextParser(HTMLParser):
+    BLOCK_TAGS = {"p", "div", "li", "br", "blockquote", "h1", "h2", "h3", "h4"}
 
+    def __init__(self):
+        super().__init__()
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        if tag in self.BLOCK_TAGS and self.parts and not self.parts[-1].endswith("\n"):
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self.BLOCK_TAGS:
+            self.parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+
+def html_to_text(value: str) -> str:
+    parser = PlainTextParser()
+    parser.feed(str(value or ""))
+    text = unescape("".join(parser.parts)).replace("\x00", "")
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines()]
+    return "\n\n".join(line for line in lines if line)
+
+
+def parse_opencli_rows(stdout: str) -> list[dict]:
     try:
-        if not wake_browser_bridge():
-            COLLECT_ERRORS.append("opencli browser bridge disconnected")
-            print("  [flomo] OpenCLI Browser Bridge 未连接")
-            return []
-
-        # 打开 flomo
-        r = subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "open", "https://v.flomoapp.com/mine"],
-            capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
-        )
-        if r.returncode != 0:
-            summary = (r.stderr or r.stdout or "opencli open failed").strip().replace("\n", " ")[:300]
-            COLLECT_ERRORS.append(summary)
-            print(f"  [flomo] 打开失败: {summary}")
-            return []
-
-        # 等待页面加载
-        subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "wait", "time", "5"],
-            capture_output=True, text=True, timeout=15, env=OPENCLI_ENV
-        )
-
-        # 检查是否需要登录
-        r = subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "state"],
-            capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
-        )
-        if r.returncode == 0 and "login" in r.stdout.lower():
-            print("  [flomo] 未登录，跳过（请先在 Mac mini 的 Chrome 中登录 flomo）")
-            subprocess.run(
-                [OPENCLI, "browser", "flomo-scrape", "close"],
-                capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
-            )
-            return []
-
-        # 滚动加载更多 memo（加载最近几天的内容）
-        for i in range(5):
-            subprocess.run(
-                [OPENCLI, "browser", "flomo-scrape", "scroll", "down"],
-                capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
-            )
-            time.sleep(1.5)
-
-        # 提取页面内容
-        r = subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "extract",
-             "--selector", ".memo-list,.richtext,.memo,.note-list"],
-            capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
-        )
-        if r.returncode != 0:
-            # fallback: 提取整页
-            r = subprocess.run(
-                [OPENCLI, "browser", "flomo-scrape", "extract"],
-                capture_output=True, text=True, timeout=30, env=OPENCLI_ENV
-            )
-
-        if r.returncode == 0 and r.stdout.strip():
-            raw = r.stdout.strip()
-            # flomo memo 通常以日期或分隔线区分
-            memos = re.split(r'\n---\n|\n#{1,3}\s+\d{4}[-/]\d{2}[-/]\d{2}', raw)
-            for memo in memos:
-                memo = memo.strip()
-                if len(memo) > 20:
-                    texts.append({
-                        "text": memo[:2000],
-                        "source": "flomo"
-                    })
-            print(f"  [flomo] 提取到 {len(texts)} 条 memo")
-        else:
-            print(f"  [flomo] 提取失败或无内容")
-
-        # 关闭浏览器 session
-        subprocess.run(
-            [OPENCLI, "browser", "flomo-scrape", "close"],
-            capture_output=True, text=True, timeout=10, env=OPENCLI_ENV
-        )
-
-    except subprocess.TimeoutExpired:
-        COLLECT_ERRORS.append("opencli timeout")
-        print("  [flomo] 超时")
-    except FileNotFoundError:
-        COLLECT_ERRORS.append(f"opencli not found: {OPENCLI}")
-        print(f"  [flomo] opencli 未找到: {OPENCLI}")
-    except Exception as e:
-        summary = str(e).strip().replace("\n", " ")[:300]
-        COLLECT_ERRORS.append(summary)
-        print(f"  [flomo] 异常: {summary}")
-
-    return texts
+        rows = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"opencli returned malformed JSON: {exc}") from exc
+    if not isinstance(rows, list):
+        raise ValueError("opencli Flomo output must be a JSON array")
+    unique: dict[str, dict] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not str(row.get("id") or "").strip():
+            raise ValueError("opencli returned a memo without id")
+        unique[str(row["id"])] = row
+    return list(unique.values())
 
 
-# ── LLM 切片 ────────────────────────────────────────────────
-SLICE_PROMPT = """\
-你是一个个人知识管理助手。请将下面这段文字切分成若干独立的记忆碎片。
-
-要求：
-- 每条碎片聚焦一个事实、想法或事件，不超过 {max_chars} 字
-- 输出 JSON 数组，每个对象包含：
-  - "content": 碎片正文
-  - "summary": 一句话摘要（20字以内）
-  - "keywords": 关键词列表（3-5个）
-- 过于零散或无意义的内容直接丢弃
-- 只输出 JSON，不要其他文字
-
-文字：
-{text}
-"""
+def memo_timestamp(value: str) -> int:
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return int(parsed.timestamp())
 
 
-def slice_text(text: str) -> list[dict]:
-    if len(text) < 30:
-        return []
-    if LLM_ERRORS:
-        return []
-    try:
-        resp = llm.chat.completions.create(
-            model=DEEPSEEK_MODEL,
-            messages=[{
-                "role": "user",
-                "content": SLICE_PROMPT.format(text=text[:3000], max_chars=CHUNK_MAX)
-            }],
-            temperature=0.2,
-        )
-        raw = resp.choices[0].message.content.strip()
-        match = re.search(r"\[.*\]", raw, re.DOTALL)
-        if not match:
-            return []
-        return json.loads(match.group())
-    except Exception as e:
-        summary = str(e).strip().replace("\n", " ")[:300]
-        LLM_ERRORS.append(summary)
-        print(f"    [切片失败] {summary}")
-        return []
+def build_document(memo: dict, indexed_at: str) -> dict | None:
+    memo_id = str(memo["id"])
+    text = html_to_text(memo.get("content", ""))
+    images = str(memo.get("images") or "").strip()
+    if not text and images:
+        text = f"[图片笔记] {images}"
+    if not text:
+        return None
+    created_at = str(memo.get("created_at") or memo.get("updated_at") or "")
+    first_line = next(line for line in text.splitlines() if line.strip())
+    return {
+        "id": hashlib.sha1(f"flomo:{memo_id}".encode()).hexdigest(),
+        "memo_id": memo_id,
+        "title": first_line[:60],
+        "text": text,
+        "content": text,
+        "source": "flomo",
+        "date": created_at[:10],
+        "created_at": created_at,
+        "updated_at": str(memo.get("updated_at") or created_at),
+        "indexed_at": indexed_at,
+        "url": str(memo.get("url") or ""),
+        "tags": str(memo.get("tags") or ""),
+        "images": images,
+    }
+
+
+def run_opencli_page(since: int) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [
+            OPENCLI,
+            "flomo",
+            "memos",
+            "--limit",
+            str(PAGE_LIMIT),
+            "--since",
+            str(since),
+            "-f",
+            "json",
+            "--window",
+            "background",
+            "--site-session",
+            "persistent",
+            "--keep-tab",
+            "false",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=90,
+        env=OPENCLI_ENV,
+    )
+
+
+def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
+    if not wake_browser_bridge():
+        raise RuntimeError("opencli browser bridge disconnected")
+    cursor = int(cursor_updated_at or 0)
+    unique: dict[str, dict] = {}
+    while True:
+        result = run_opencli_page(cursor)
+        if result.returncode == 66 and "EMPTY_RESULT" in result.stderr:
+            break
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "opencli failed").strip()[:300]
+            raise RuntimeError(detail)
+        page = parse_opencli_rows(result.stdout)
+        if not page:
+            break
+        before = len(unique)
+        for memo in page:
+            unique[str(memo["id"])] = memo
+        next_cursor = max(memo_timestamp(row["updated_at"]) for row in page)
+        if len(page) < PAGE_LIMIT:
+            cursor = max(cursor, next_cursor)
+            break
+        if next_cursor <= cursor or len(unique) == before:
+            raise RuntimeError("Flomo pagination did not advance")
+        cursor = next_cursor
+    return list(unique.values()), cursor
 
 
 # ── 写入 Meilisearch ────────────────────────────────────────
-def push_chunks(docs: list[dict]):
-    if not docs:
-        return
+def ingest_documents(docs: list[dict]) -> list[int]:
     headers = {
         "Authorization": f"Bearer {MEMORY_TOKEN}",
         "Content-Type": "application/json",
     }
-    batch_size = 50
-    total = 0
-    for i in range(0, len(docs), batch_size):
-        batch = docs[i:i + batch_size]
-        try:
-            r = requests.post(
-                f"{MEMORY_URL}/ingest",
+    task_uids: list[int] = []
+    for offset in range(0, len(docs), 50):
+        response = requests.post(
+            f"{MEMORY_URL}/ingest",
+            headers=headers,
+            json={"index": "memory_chunks", "documents": docs[offset:offset + 50]},
+            timeout=30,
+        )
+        response.raise_for_status()
+        task_uid = int(response.json().get("task_uid", -1))
+        if task_uid < 0:
+            raise RuntimeError("memory-api did not return task_uid")
+        task_uids.append(task_uid)
+    return task_uids
+
+
+def wait_for_tasks(task_uids: list[int], timeout_seconds: int = 300) -> None:
+    if not task_uids:
+        return
+    if not MEILI_MASTER_KEY:
+        raise RuntimeError("MEILI_MASTER_KEY is required to verify ingest tasks")
+    headers = {"Authorization": f"Bearer {MEILI_MASTER_KEY}"}
+    deadline = time.time() + timeout_seconds
+    pending = set(task_uids)
+    while pending and time.time() < deadline:
+        for task_uid in list(pending):
+            response = requests.get(
+                f"{MEILI_URL}/tasks/{task_uid}",
                 headers=headers,
-                json={"index": "memory_chunks", "documents": batch},
-                timeout=30,
+                timeout=10,
             )
-            r.raise_for_status()
-            total += r.json().get("count", len(batch))
-        except Exception as e:
-            print(f"    [写入失败] batch {i//batch_size}: {e}")
-        time.sleep(0.3)
-    print(f"  [memory-api] 写入 {total} 条到 memory_chunks")
+            response.raise_for_status()
+            payload = response.json()
+            status = payload.get("status")
+            if status == "succeeded":
+                pending.remove(task_uid)
+            elif status in {"failed", "canceled"}:
+                raise RuntimeError(f"Meilisearch task {task_uid} {status}")
+        if pending:
+            time.sleep(0.5)
+    if pending:
+        raise TimeoutError(f"Meilisearch tasks still pending: {sorted(pending)}")
 
 
 # ── 主流程 ────────────────────────────────────────────────
-def main() -> int:
+def run_once() -> int:
     start_time = time.time()
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始 flomo 采集（Mac mini）")
-
     state = load_state()
-    texts = collect_flomo()
+    seen = set(state["seen_memo_ids"])
+    stage = "collect"
+    try:
+        fetched, cursor = collect_flomo(state["cursor_updated_at"])
+        new_memos = [memo for memo in fetched if str(memo["id"]) not in seen]
+        indexed_at = datetime.now().astimezone().isoformat(timespec="seconds")
+        pairs = [(memo, build_document(memo, indexed_at)) for memo in new_memos]
+        docs = [doc for _, doc in pairs if doc]
+        stage = "ingest"
+        task_uids = ingest_documents(docs) if docs else []
+        wait_for_tasks(task_uids)
 
-    if not texts:
-        if COLLECT_ERRORS:
-            print("  flomo 采集失败，未更新 last_run")
-            record_metrics(
-                "layer1_flomo",
-                memos=0,
-                chunks=0,
-                collect_errors=len(COLLECT_ERRORS),
-                collect_error_summary=COLLECT_ERRORS[0],
-                llm_errors=0,
-                run_duration_seconds=round(time.time() - start_time, 1),
-            )
-            return 2
-        print("  无新 memo，跳过")
-        save_state({"last_run": datetime.now().isoformat()})
+        seen.update(str(memo["id"]) for memo in new_memos)
+        save_state({
+            "version": 2,
+            "cursor_updated_at": max(int(state["cursor_updated_at"]), int(cursor)),
+            "seen_memo_ids": sorted(seen),
+            "last_success_at": indexed_at,
+        })
         record_last_run("layer1_flomo")
         record_metrics(
             "layer1_flomo",
-            memos=0,
-            chunks=0,
+            fetched_memos=len(fetched),
+            new_memos=len(new_memos),
+            memos=len(new_memos),
+            skipped_seen_memos=len(fetched) - len(new_memos),
+            skipped_empty_memos=sum(doc is None for _, doc in pairs),
+            documents_written=len(docs),
+            chunks=len(docs),
             collect_errors=0,
-            llm_errors=0,
+            ingest_errors=0,
+            latest_memo_updated_at=cursor,
             run_duration_seconds=round(time.time() - start_time, 1),
         )
+        print(
+            f"  fetched={len(fetched)} new={len(new_memos)} "
+            f"written={len(docs)} skipped_seen={len(fetched) - len(new_memos)}"
+        )
         return 0
+    except Exception as exc:
+        summary = str(exc).strip().replace("\n", " ")[:300]
+        record_metrics(
+            "layer1_flomo",
+            fetched_memos=0,
+            new_memos=0,
+            memos=0,
+            documents_written=0,
+            chunks=0,
+            collect_errors=1 if stage == "collect" else 0,
+            collect_error_summary=summary if stage == "collect" else "",
+            ingest_errors=1 if stage == "ingest" else 0,
+            ingest_error_summary=summary if stage == "ingest" else "",
+            run_duration_seconds=round(time.time() - start_time, 1),
+        )
+        print(f"  flomo {stage} 失败，未更新 state: {summary}")
+        return 2
 
-    print(f"  共收集 {len(texts)} 条 memo，开始切片...")
 
-    all_chunks = []
-    for item in texts:
-        chunks = slice_text(item["text"])
-        for c in chunks:
-            if not c.get("content"):
-                continue
-            chunk_id = hashlib.md5(c["content"].encode()).hexdigest()
-            all_chunks.append({
-                "id": chunk_id,
-                "title": c.get("summary", ""),
-                "content": c["content"],
-                "keywords": c.get("keywords", []),
-                "source": "flomo",
-                "created_at": datetime.now().isoformat(),
-            })
-        time.sleep(0.5)
-
-    print(f"  切片完成：{len(all_chunks)} 条碎片")
-    push_chunks(all_chunks)
-
-    save_state({"last_run": datetime.now().isoformat()})
-    if not LLM_ERRORS:
-        record_last_run("layer1_flomo")
-    record_metrics(
-        "layer1_flomo",
-        memos=len(texts),
-        chunks=len(all_chunks),
-        collect_errors=len(COLLECT_ERRORS),
-        collect_error_summary=COLLECT_ERRORS[0] if COLLECT_ERRORS else "",
-        llm_errors=len(LLM_ERRORS),
-        llm_error_summary=LLM_ERRORS[0] if LLM_ERRORS else "",
-        run_duration_seconds=round(time.time() - start_time, 1),
-    )
-    print(f"[完成] flomo 采集 {len(all_chunks)} 条记忆碎片")
-    return 2 if LLM_ERRORS else 0
+def main() -> int:
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始 flomo 增量采集（Mac mini）")
+    return run_once()
 
 
 if __name__ == "__main__":
