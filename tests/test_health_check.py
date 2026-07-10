@@ -26,6 +26,20 @@ class HealthCheckTests(unittest.TestCase):
         for key, value in self.originals.items():
             setattr(self.health, key, value)
 
+    def _quality_alerts_for(self, metrics):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            (shared_metrics / "metrics.jsonl").write_text(
+                "".join(json.dumps(metric, ensure_ascii=False) + "\n" for metric in metrics)
+            )
+            self.health.METRICS_SHARED_DIR = shared_metrics
+            self.health.METRICS_FILE = logs / "missing_metrics.jsonl"
+            return self.health.check_quality()
+
     def test_liveness_checks_local_last_run_when_shared_status_exists(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -108,7 +122,7 @@ class HealthCheckTests(unittest.TestCase):
         self.assertTrue(any("LLM 调用失败" in alert for alert in alerts))
         self.assertTrue(any("Insufficient Balance" in alert for alert in alerts))
 
-    def test_quality_aggregates_layer1_sources_before_chunk_alert(self):
+    def test_quality_alerts_on_rag_input_without_output_even_if_flomo_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shared_metrics = root / "data" / "metrics"
@@ -140,7 +154,10 @@ class HealthCheckTests(unittest.TestCase):
 
             alerts = self.health.check_quality()
 
-        self.assertFalse(any("新增切片仅" in alert for alert in alerts))
+        self.assertTrue(any(
+            "layer1_rag" in alert and "写入 0" in alert
+            for alert in alerts
+        ))
 
     def test_quality_alerts_on_flomo_collect_errors(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -168,6 +185,41 @@ class HealthCheckTests(unittest.TestCase):
 
         self.assertTrue(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
         self.assertTrue(any("opencli open failed" in alert for alert in alerts))
+
+    def test_quality_allows_successful_flomo_run_with_no_new_memos(self):
+        today = datetime.now().strftime("%Y-%m-%d")
+        alerts = self._quality_alerts_for([{
+            "date": today,
+            "script": "layer1_flomo",
+            "timestamp": f"{today}T19:10:00",
+            "hostname": "mini",
+            "new_memos": 0,
+            "documents_written": 0,
+            "chunks": 0,
+            "collect_errors": 0,
+            "ingest_errors": 0,
+        }])
+
+        self.assertFalse(any("layer1" in alert for alert in alerts))
+
+    def test_quality_alerts_when_new_flomo_memos_write_no_documents(self):
+        today = datetime.now().strftime("%Y-%m-%d")
+        alerts = self._quality_alerts_for([{
+            "date": today,
+            "script": "layer1_flomo",
+            "timestamp": f"{today}T19:10:00",
+            "hostname": "mini",
+            "new_memos": 2,
+            "documents_written": 0,
+            "chunks": 0,
+            "collect_errors": 0,
+            "ingest_errors": 0,
+        }])
+
+        self.assertTrue(any(
+            "layer1_flomo" in alert and "写入 0" in alert
+            for alert in alerts
+        ))
 
 
 if __name__ == "__main__":

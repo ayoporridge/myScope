@@ -329,7 +329,7 @@ def check_quality() -> list[str]:
                     f"🔴 `{host}` hippocampus_formation 提交失败（{batches_success}/{batches_total} 批成功）"
                 )
 
-    # 检查 2：memory_chunks 新增（Layer 1 跨机器聚合）
+    # 检查 2：Layer 1 有输入但没有写入
     layer1_metrics = [
         m for m in recent_metrics
         if m.get("script") in ("layer1_rag", "layer1_flomo")
@@ -337,15 +337,21 @@ def check_quality() -> list[str]:
     ]
     if layer1_metrics:
         latest_by_job = _latest_metrics_by_job(layer1_metrics)
-        total_chunks = sum(_layer1_chunks(m) for m in latest_by_job.values())
-        if total_chunks < 3:
-            detail = "、".join(
-                f"{script}@{host}={_layer1_chunks(metric)}"
-                for (host, script), metric in sorted(latest_by_job.items())
-            )
-            alerts.append(
-                f"🟡 `layer1` 新增切片仅 {total_chunks} 条（阈值 3）[{detail}]"
-            )
+        for (host, script), metric in sorted(latest_by_job.items()):
+            if script == "layer1_flomo":
+                inputs = int(metric.get("new_memos", metric.get("memos", 0)) or 0)
+                outputs = int(metric.get("documents_written", metric.get("chunks", 0)) or 0)
+                if inputs > 0 and outputs == 0:
+                    alerts.append(
+                        f"🔴 `{host}` `layer1_flomo` 有 {inputs} 条新 memo，但写入 0 条文档"
+                    )
+            else:
+                inputs = int(metric.get("raw_texts", 0) or 0)
+                outputs = int(metric.get("chunks_produced", 0) or 0)
+                if inputs > 0 and outputs == 0:
+                    alerts.append(
+                        f"🔴 `{host}` `layer1_rag` 有 {inputs} 条输入，但写入 0 条切片"
+                    )
 
     # 检查 3：LLM provider 是否失败（余额、Key 或模型服务异常）
     llm_metrics = [

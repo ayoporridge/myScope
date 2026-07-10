@@ -3,7 +3,7 @@
 个人三层记忆系统 + 海马体。Mac mini（24/7）+ MacBook（日间使用）双机协作。
 
 ```
-第一层  事实记忆   微信/Obsidian/flomo/Dayflow → DeepSeek 切片 → Meilisearch
+第一层  事实记忆   微信/Obsidian → DeepSeek 切片；flomo/Dayflow → 稳定 ID 文档 → Meilisearch
 第二层  结构记忆   Layer 1 切片 + Layer 3 半径 → DeepSeek 跨层综合 → Meilisearch
 第三层  半径记忆   FreshRSS + 公众号文章 → 直接索引 → Meilisearch
 海马体  对话记忆   Claude/Codex/Hermes/Clacky 会话 → 过滤 → Anda 知识图谱
@@ -60,7 +60,7 @@
 | 公众号文章 | **MacBook** | opencli wx 读本地微信缓存 |
 | Obsidian 笔记 | **MacBook** | vault 在 MacBook 桌面 |
 | Dayflow 屏幕活动 | **MacBook** | Dayflow 只装在 MacBook |
-| flomo | **Mac mini** | 浏览器自动化采集 |
+| flomo | **Mac mini** | OpenCLI 结构化采集（复用浏览器登录态） |
 | FreshRSS | **Mac mini** | Docker 容器在 Mac mini |
 | Codex / Hermes 会话 | **Mac mini** | Agent 运行在 Mac mini |
 | Claude Code / Clacky 会话 | **MacBook** | 开发在 MacBook |
@@ -102,6 +102,8 @@ nano .env
 | `DEEPSEEK_MODEL` | DeepSeek 模型，默认 `deepseek-chat` |
 | `MEMORY_API_URL` | `https://memory.arjo.us.ci` |
 | `MEMORY_API_TOKEN` | Memory API Token |
+| `MEILI_URL` | 本机 Meilisearch，默认 `http://localhost:7700` |
+| `MEILI_MASTER_KEY` | 用于确认异步 ingest task，必须仅保存在 `.env` |
 | `ANDA_BASE_URL` | `https://hippocampus.arjo.us.ci` |
 | `ANDA_SPACE_ID` | Anda 空间 ID |
 | `ANDA_SPACE_TOKEN` | Anda 空间 Token |
@@ -144,7 +146,7 @@ sudo bash scripts/install_macbook_wake_schedule.sh # 每天 06:05 唤醒一次
 | 时间 | 脚本 | 数据源 → 目标索引 |
 |------|------|------------------|
 | 02:30 | `layer3_index.py` | FreshRSS → `hubble_radius` |
-| 19:10 | `layer1_flomo.py` | flomo 网页 → `memory_chunks`（DeepSeek） |
+| 19:10 | `layer1_flomo.py` | flomo 新 memo → `memory_chunks`（稳定 memo ID） |
 | 07:20 | `layer2_wiki.py` | 跨层综合 → `wiki_entries`（DeepSeek） |
 | 06:00 | `hippocampus_formation.py` | Codex/Hermes/Clacky → Anda |
 | 06:30 | `health_check.py` | 存活性+质量 → 飞书告警 |
@@ -239,7 +241,7 @@ myScope/
 ├── setup.sh                        # 一键安装脚本
 ├── scripts/
 │   ├── layer1_rag.py               # 第一层：微信+Obsidian → 切片（MacBook）
-│   ├── layer1_flomo.py             # 第一层：flomo → 切片（Mac mini）
+│   ├── layer1_flomo.py             # 第一层：flomo 增量 memo → 稳定 ID 文档（Mac mini）
 │   ├── layer2_wiki.py              # 第二层：跨层综合 → Wiki（Mac mini）
 │   ├── layer3_index.py             # 第三层：RSS → 索引（Mac mini）
 │   ├── layer3_wechat.py            # 第三层：公众号 → 索引（MacBook）
