@@ -1,4 +1,5 @@
 import importlib
+import fcntl
 import json
 import os
 import subprocess
@@ -138,6 +139,33 @@ class Layer1FlomoTests(unittest.TestCase):
                     self.flomo.memo_timestamp("2026-07-08T07:03:00+08:00")
                 )
 
+    def test_full_pages_with_same_timestamp_advance_by_slug(self):
+        timestamp = "2026-07-08T07:03:00+08:00"
+        first = [self.memo(f"first-{i}") for i in range(200)]
+        second = [self.memo(f"second-{i}") for i in range(200)]
+        final = [self.memo("final")]
+        for memo in first + second + final:
+            memo["updated_at"] = timestamp
+        pages = [
+            subprocess.CompletedProcess([], 0, json.dumps(first), ""),
+            subprocess.CompletedProcess([], 0, json.dumps(second), ""),
+            subprocess.CompletedProcess([], 0, json.dumps(final), ""),
+        ]
+
+        with patch.object(self.flomo, "wake_browser_bridge", return_value=True), patch.object(
+            self.flomo,
+            "run_opencli_page",
+            side_effect=pages,
+        ) as run_page:
+            rows, cursor = self.flomo.collect_flomo(0)
+
+        expected_cursor = self.flomo.memo_timestamp(timestamp)
+        self.assertEqual(401, len(rows))
+        self.assertEqual(expected_cursor, cursor)
+        self.assertEqual((0, ""), run_page.call_args_list[0].args)
+        self.assertEqual((expected_cursor, "first-199"), run_page.call_args_list[1].args)
+        self.assertEqual((expected_cursor, "second-199"), run_page.call_args_list[2].args)
+
     def test_legacy_state_starts_full_version_two_collection(self):
         with tempfile.TemporaryDirectory() as tmp:
             state_file = Path(tmp) / "state.json"
@@ -267,6 +295,25 @@ class Layer1FlomoTests(unittest.TestCase):
         self.assertEqual(["memo-1"], state["seen_memo_ids"])
         self.assertEqual(0, metrics.call_args.kwargs["new_memos"])
         self.assertEqual(0, metrics.call_args.kwargs["documents_written"])
+
+    def test_run_once_holds_exclusive_state_lock(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            state_file = Path(tmp) / "state.json"
+            with patch.object(self.flomo, "STATE_FILE", state_file), patch.object(
+                self.flomo,
+                "collect_flomo",
+                return_value=([], 10),
+            ), patch.object(
+                self.flomo,
+                "record_last_run",
+            ), patch.object(
+                self.flomo,
+                "record_metrics",
+            ), patch("fcntl.flock") as flock:
+                self.assertEqual(0, self.flomo.run_once())
+
+        lock_modes = [args[1] for args, _ in flock.call_args_list]
+        self.assertEqual([fcntl.LOCK_EX, fcntl.LOCK_UN], lock_modes)
 
 
 if __name__ == "__main__":

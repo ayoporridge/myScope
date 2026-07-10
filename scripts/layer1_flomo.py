@@ -9,6 +9,7 @@ OpenCLI 结构化采集 → 稳定 ID 文档 → Meilisearch memory_chunks
 """
 
 import os
+import fcntl
 import json
 import re
 import hashlib
@@ -212,25 +213,30 @@ def build_document(memo: dict, indexed_at: str) -> dict | None:
     }
 
 
-def run_opencli_page(since: int) -> subprocess.CompletedProcess:
+def run_opencli_page(since: int, slug: str = "") -> subprocess.CompletedProcess:
+    command = [
+        OPENCLI,
+        "flomo",
+        "memos",
+        "--limit",
+        str(PAGE_LIMIT),
+        "--since",
+        str(since),
+    ]
+    if slug:
+        command.extend(["--slug", slug])
+    command.extend([
+        "-f",
+        "json",
+        "--window",
+        "background",
+        "--site-session",
+        "persistent",
+        "--keep-tab",
+        "false",
+    ])
     return subprocess.run(
-        [
-            OPENCLI,
-            "flomo",
-            "memos",
-            "--limit",
-            str(PAGE_LIMIT),
-            "--since",
-            str(since),
-            "-f",
-            "json",
-            "--window",
-            "background",
-            "--site-session",
-            "persistent",
-            "--keep-tab",
-            "false",
-        ],
+        command,
         capture_output=True,
         text=True,
         timeout=90,
@@ -242,9 +248,10 @@ def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
     if not wake_browser_bridge():
         raise RuntimeError("opencli browser bridge disconnected")
     cursor = int(cursor_updated_at or 0)
+    slug = ""
     unique: dict[str, dict] = {}
     while True:
-        result = run_opencli_page(cursor)
+        result = run_opencli_page(cursor, slug)
         if result.returncode == 66 and "EMPTY_RESULT" in result.stderr:
             break
         if result.returncode != 0:
@@ -260,9 +267,11 @@ def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
         if len(page) < PAGE_LIMIT:
             cursor = max(cursor, next_cursor)
             break
-        if next_cursor <= cursor or len(unique) == before:
+        next_slug = str(page[-1].get("slug") or page[-1]["id"])
+        if next_cursor < cursor or not next_slug or len(unique) == before:
             raise RuntimeError("Flomo pagination did not advance")
         cursor = next_cursor
+        slug = next_slug
     return list(unique.values()), cursor
 
 
@@ -317,7 +326,7 @@ def wait_for_tasks(task_uids: list[int], timeout_seconds: int = 300) -> None:
 
 
 # ── 主流程 ────────────────────────────────────────────────
-def run_once() -> int:
+def _run_once_locked() -> int:
     start_time = time.time()
     state = load_state()
     seen = set(state["seen_memo_ids"])
@@ -376,6 +385,17 @@ def run_once() -> int:
         )
         print(f"  flomo {stage} 失败，未更新 state: {summary}")
         return 2
+
+
+def run_once() -> int:
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = STATE_FILE.with_suffix(STATE_FILE.suffix + ".lock")
+    with lock_file.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        try:
+            return _run_once_locked()
+        finally:
+            fcntl.flock(lock_handle, fcntl.LOCK_UN)
 
 
 def main() -> int:
