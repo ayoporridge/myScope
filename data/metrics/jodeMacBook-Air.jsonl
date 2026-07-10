@@ -395,3 +395,243 @@
 {"date": "2026-07-04", "script": "run_due_jobs", "timestamp": "2026-07-04T16:15:18", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
 {"date": "2026-07-04", "script": "dashboard_state_sync", "timestamp": "2026-07-04T16:15:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
 {"date": "2026-07-04", "script": "run_due_jobs", "timestamp": "2026-07-04T17:15:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-04", "script": "dashboard_state_sync", "timestamp": "2026-07-04T17:16:31", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-04", "script": "layer1_rag", "timestamp": "2026-07-04T19:50:52", "hostname": "jodeMacBook-Air", "raw_texts": 1, "chunks_produced": 0, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 6.4}
+{"date": "2026-07-04", "script": "job_runner", "timestamp": "2026-07-04T19:50:53", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 7.0}
+{"date": "2026-07-04", "script": "layer2_wiki", "timestamp": "2026-07-04T19:51:55", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 2268, "wiki_create_count": 3, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 2, "wiki_entries_written": 3, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 62.2}
+{"date": "2026-07-04", "script": "job_runner", "timestamp": "2026-07-04T19:51:55", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 62.9}
+{"date": "2026-07-04", "script": "run_due_jobs", "timestamp": "2026-07-04T19:51:55", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 2, "failures": 0}
+{"date": "2026-07-04", "script": "dashboard_state_sync", "timestamp": "2026-07-04T19:52:28", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-04", "script": "run_due_jobs", "timestamp": "2026-07-04T20:52:28", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-04", "script": "dashboard_state_sync", "timestamp": "2026-07-04T20:53:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-04", "script": "dayflow_sync", "timestamp": "2026-07-04T22:23:25", "hostname": "jodeMacBook-Air", "observations_synced": 101, "run_duration_seconds": 23.6}
+{"date": "2026-07-04", "script": "job_runner", "timestamp": "2026-07-04T22:23:25", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 23.7}
+{"date": "2026-07-04", "script": "run_due_jobs", "timestamp": "2026-07-04T22:23:25", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-04", "script": "dashboard_state_sync", "timestamp": "2026-07-04T22:38:33", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-05", "script": "dayflow_sync", "timestamp": "2026-07-05T06:22:29", "hostname": "jodeMacBook-Air", "observations_synced": 13, "run_duration_seconds": 1.3}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T06:22:29", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 1.6}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T06:22:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T06:22:45", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T07:22:46", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T07:23:03", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T08:23:03", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T08:23:19", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T09:23:19", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T09:23:35", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T10:23:35", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T10:23:55", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "source_audit", "timestamp": "2026-07-05T10:46:35", "hostname": "jodeMacBook-Air", "sources_total": 154, "uncategorized": 154}
+{"date": "2026-07-05", "script": "layer3_wechat", "timestamp": "2026-07-05T11:24:07", "hostname": "jodeMacBook-Air", "articles_indexed": 211, "run_duration_seconds": 11.4}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T11:24:07", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 11.5}
+{"date": "2026-07-05", "script": "hippocampus_formation", "timestamp": "2026-07-05T11:24:38", "hostname": "jodeMacBook-Air", "total_messages": 526, "meaningful_messages": 496, "filtered_messages": 30, "batches_success": 13, "batches_total": 13, "run_duration_seconds": 30.8}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T11:24:38", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 31.1}
+{"date": "2026-07-05", "script": "dayflow_daily_summary", "timestamp": "2026-07-05T11:24:39", "hostname": "jodeMacBook-Air", "observations_summarized": 121, "summary_chars": 7987, "formation_success": true, "run_duration_seconds": 0.5}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T11:24:39", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.8}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T11:24:39", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 3, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T11:24:56", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "source_audit", "timestamp": "2026-07-05T12:16:39", "hostname": "jodeMacBook-Air", "sources_total": 58, "uncategorized": 58}
+{"date": "2026-07-05", "script": "dayflow_sync", "timestamp": "2026-07-05T12:24:57", "hostname": "jodeMacBook-Air", "observations_synced": 98, "run_duration_seconds": 1.3}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T12:24:57", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 1.5}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T12:24:57", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T12:25:13", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T13:25:13", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T13:25:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "source_audit", "timestamp": "2026-07-05T14:15:08", "hostname": "jodeMacBook-Air", "sources_total": 60, "uncategorized": 60}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T14:25:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T14:25:47", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T15:25:47", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T15:26:03", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "dayflow_sync", "timestamp": "2026-07-05T18:29:29", "hostname": "jodeMacBook-Air", "observations_synced": 55, "run_duration_seconds": 4.9}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T18:29:29", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 5.0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T18:29:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T18:30:11", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "layer1_rag", "timestamp": "2026-07-05T19:30:30", "hostname": "jodeMacBook-Air", "raw_texts": 2, "chunks_produced": 1, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 19.4}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T19:30:31", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 19.9}
+{"date": "2026-07-05", "script": "layer2_wiki", "timestamp": "2026-07-05T19:31:28", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 2901, "wiki_create_count": 4, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 3, "wiki_entries_written": 4, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 57.3}
+{"date": "2026-07-05", "script": "job_runner", "timestamp": "2026-07-05T19:31:28", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 57.9}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T19:31:28", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 2, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T19:32:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T20:32:05", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T20:32:42", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T21:32:42", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T21:33:19", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T22:33:19", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T22:34:08", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-05", "script": "run_due_jobs", "timestamp": "2026-07-05T23:34:08", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-05", "script": "dashboard_state_sync", "timestamp": "2026-07-05T23:34:48", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "dayflow_sync", "timestamp": "2026-07-06T00:34:54", "hostname": "jodeMacBook-Air", "observations_synced": 74, "run_duration_seconds": 5.7}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T00:34:54", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 5.9}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T00:34:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T00:35:24", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T01:35:24", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T01:35:58", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T02:35:58", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T02:36:31", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T03:36:31", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T03:37:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T04:37:05", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T04:37:37", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T06:05:51", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T06:06:06", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "dayflow_sync", "timestamp": "2026-07-06T07:06:08", "hostname": "jodeMacBook-Air", "observations_synced": 17, "run_duration_seconds": 1.1}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T07:06:08", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 1.3}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T07:06:08", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T07:06:26", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "layer3_wechat", "timestamp": "2026-07-06T08:06:31", "hostname": "jodeMacBook-Air", "articles_indexed": 24, "run_duration_seconds": 4.3}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T08:06:31", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 4.5}
+{"date": "2026-07-06", "script": "hippocampus_formation", "timestamp": "2026-07-06T08:07:06", "hostname": "jodeMacBook-Air", "total_messages": 749, "meaningful_messages": 690, "filtered_messages": 59, "batches_success": 18, "batches_total": 18, "run_duration_seconds": 35.1}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T08:07:06", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 35.4}
+{"date": "2026-07-06", "script": "dayflow_daily_summary", "timestamp": "2026-07-06T08:07:07", "hostname": "jodeMacBook-Air", "observations_summarized": 235, "summary_chars": 7995, "formation_success": true, "run_duration_seconds": 0.6}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T08:07:07", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.7}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T08:07:07", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 3, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T08:07:23", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T09:07:23", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T09:07:43", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T10:07:43", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T10:08:00", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "source_audit", "timestamp": "2026-07-06T10:36:18", "hostname": "jodeMacBook-Air", "sources_total": 60, "uncategorized": 60}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T11:08:00", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T11:08:17", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T12:08:17", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T12:08:33", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "dayflow_sync", "timestamp": "2026-07-06T13:08:36", "hostname": "jodeMacBook-Air", "observations_synced": 67, "run_duration_seconds": 2.7}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T13:08:36", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 2.9}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T13:08:36", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T13:08:53", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T14:08:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T14:09:10", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T15:09:10", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T15:09:27", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "dayflow_sync", "timestamp": "2026-07-06T20:51:32", "hostname": "jodeMacBook-Air", "observations_synced": 26, "run_duration_seconds": 3.4}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T20:51:32", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 5.7}
+{"date": "2026-07-06", "script": "layer1_rag", "timestamp": "2026-07-06T20:52:17", "hostname": "jodeMacBook-Air", "raw_texts": 1, "chunks_produced": 0, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 33.9}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T20:52:22", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 48.5}
+{"date": "2026-07-06", "script": "layer2_wiki", "timestamp": "2026-07-06T20:53:34", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 2459, "wiki_create_count": 3, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 2, "wiki_entries_written": 3, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 58.4}
+{"date": "2026-07-06", "script": "job_runner", "timestamp": "2026-07-06T20:53:36", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 72.0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T20:53:36", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 3, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T20:54:13", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T21:54:13", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T21:54:43", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T22:54:43", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T22:55:13", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-06", "script": "run_due_jobs", "timestamp": "2026-07-06T23:55:14", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-06", "script": "dashboard_state_sync", "timestamp": "2026-07-06T23:55:44", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T00:55:44", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T00:56:14", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T01:56:14", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T01:56:44", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-07", "script": "layer3_wechat", "timestamp": "2026-07-07T06:28:06", "hostname": "jodeMacBook-Air", "articles_indexed": 0, "fetch_failed": true, "run_duration_seconds": 19.1}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T06:28:06", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "failure", "exit_code": 1, "run_duration_seconds": 20.3}
+{"date": "2026-07-07", "script": "hippocampus_formation", "timestamp": "2026-07-07T06:28:42", "hostname": "jodeMacBook-Air", "total_messages": 751, "meaningful_messages": 701, "filtered_messages": 50, "batches_success": 18, "batches_total": 18, "run_duration_seconds": 36.6}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T06:28:43", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 36.7}
+{"date": "2026-07-07", "script": "dayflow_daily_summary", "timestamp": "2026-07-07T06:28:43", "hostname": "jodeMacBook-Air", "observations_summarized": 131, "summary_chars": 7807, "formation_success": true, "run_duration_seconds": 0.7}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T06:28:44", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.9}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T06:28:44", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 4, "failures": 2}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T06:28:59", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "layer3_wechat", "timestamp": "2026-07-07T07:29:04", "hostname": "jodeMacBook-Air", "articles_indexed": 0, "run_duration_seconds": 3.8}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T07:29:04", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 4.3}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T07:29:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 2, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T07:29:20", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T08:29:20", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T08:29:41", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T09:29:41", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T09:29:56", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T10:29:56", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T10:30:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T11:30:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T11:30:20", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T12:30:20", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T12:30:36", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T13:30:36", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T13:30:55", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T14:30:55", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T14:31:15", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T15:34:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T15:34:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-07", "script": "layer1_rag", "timestamp": "2026-07-07T20:29:38", "hostname": "jodeMacBook-Air", "raw_texts": 1, "chunks_produced": 0, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 30.9}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T20:29:38", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 31.4}
+{"date": "2026-07-07", "script": "layer2_wiki", "timestamp": "2026-07-07T20:30:57", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 1834, "wiki_create_count": 4, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 3, "wiki_entries_written": 4, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 79.4}
+{"date": "2026-07-07", "script": "job_runner", "timestamp": "2026-07-07T20:30:58", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 79.8}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T20:30:58", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 3, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T20:31:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T21:31:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T21:31:58", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T22:31:58", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T22:32:36", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-07", "script": "run_due_jobs", "timestamp": "2026-07-07T23:32:35", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-07", "script": "dashboard_state_sync", "timestamp": "2026-07-07T23:33:51", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T00:33:51", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T00:34:24", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T01:34:25", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T01:34:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "layer3_wechat", "timestamp": "2026-07-08T06:46:45", "hostname": "jodeMacBook-Air", "articles_indexed": 23, "run_duration_seconds": 5.4}
+{"date": "2026-07-08", "script": "job_runner", "timestamp": "2026-07-08T06:46:45", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 5.7}
+{"date": "2026-07-08", "script": "hippocampus_formation", "timestamp": "2026-07-08T06:49:28", "hostname": "jodeMacBook-Air", "total_messages": 2994, "meaningful_messages": 2624, "filtered_messages": 370, "batches_success": 66, "batches_total": 66, "run_duration_seconds": 163.4}
+{"date": "2026-07-08", "script": "job_runner", "timestamp": "2026-07-08T06:49:29", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 163.6}
+{"date": "2026-07-08", "script": "dayflow_daily_summary", "timestamp": "2026-07-08T06:49:29", "hostname": "jodeMacBook-Air", "observations_summarized": 0, "formation_success": false, "run_duration_seconds": 0.0}
+{"date": "2026-07-08", "script": "job_runner", "timestamp": "2026-07-08T06:49:29", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.1}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T06:49:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 4, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T06:50:07", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T07:50:08", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T07:50:40", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T10:19:12", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T10:19:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T11:19:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T11:19:45", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T12:19:45", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T12:20:10", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T13:20:10", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T13:20:26", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T14:20:26", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T14:20:45", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T15:20:45", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T15:21:03", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T16:21:03", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T16:21:23", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-08", "script": "run_due_jobs", "timestamp": "2026-07-08T17:21:23", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 1}
+{"date": "2026-07-08", "script": "dashboard_state_sync", "timestamp": "2026-07-08T17:21:40", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "layer2_wiki", "timestamp": "2026-07-09T06:44:16", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 1907, "wiki_create_count": 4, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 3, "wiki_entries_written": 4, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 42.2}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:44:16", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 42.6}
+{"date": "2026-07-09", "script": "layer3_wechat", "timestamp": "2026-07-09T06:45:40", "hostname": "jodeMacBook-Air", "articles_indexed": 3, "run_duration_seconds": 5.2}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:45:40", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 5.4}
+{"date": "2026-07-09", "script": "layer1_rag", "timestamp": "2026-07-09T06:45:48", "hostname": "jodeMacBook-Air", "raw_texts": 1, "chunks_produced": 0, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 7.6}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:45:48", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 8.0}
+{"date": "2026-07-09", "script": "hippocampus_formation", "timestamp": "2026-07-09T06:45:54", "hostname": "jodeMacBook-Air", "total_messages": 41, "meaningful_messages": 34, "filtered_messages": 7, "batches_success": 1, "batches_total": 1, "run_duration_seconds": 5.1}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:45:54", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 5.2}
+{"date": "2026-07-09", "script": "dayflow_daily_summary", "timestamp": "2026-07-09T06:45:54", "hostname": "jodeMacBook-Air", "observations_summarized": 0, "formation_success": false, "run_duration_seconds": 0.0}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:45:54", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.1}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T06:45:54", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 5, "failures": 1}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T06:46:22", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "dayflow_sync", "timestamp": "2026-07-09T06:46:45", "hostname": "jodeMacBook-Air", "observations_synced": 21, "run_duration_seconds": 1.6}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T06:46:45", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 1.7}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T06:47:28", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T06:47:56", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T06:50:29", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T06:50:56", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T08:58:00", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 0, "failures": 0}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T08:58:17", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "dayflow_sync", "timestamp": "2026-07-09T12:47:49", "hostname": "jodeMacBook-Air", "observations_synced": 0, "run_duration_seconds": 0.0}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T12:47:49", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 0.1}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T12:47:49", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T12:48:04", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "success", "exit_code": 0}
+{"date": "2026-07-09", "script": "dayflow_sync", "timestamp": "2026-07-09T18:49:35", "hostname": "jodeMacBook-Air", "observations_synced": 0, "run_duration_seconds": 0.0}
+{"date": "2026-07-09", "script": "job_runner", "timestamp": "2026-07-09T18:49:35", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 0.1}
+{"date": "2026-07-09", "script": "run_due_jobs", "timestamp": "2026-07-09T18:49:35", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
+{"date": "2026-07-09", "script": "dashboard_state_sync", "timestamp": "2026-07-09T18:49:35", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-10", "script": "dayflow_sync", "timestamp": "2026-07-10T05:42:01", "hostname": "jodeMacBook-Air", "observations_synced": 0, "run_duration_seconds": 0.0}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T05:42:01", "hostname": "jodeMacBook-Air", "job": "dayflow_sync", "status": "success", "exit_code": 0, "run_duration_seconds": 0.2}
+{"date": "2026-07-10", "script": "layer3_wechat", "timestamp": "2026-07-10T05:42:07", "hostname": "jodeMacBook-Air", "articles_indexed": 0, "fetch_failed": true, "run_duration_seconds": 6.0}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T05:42:07", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "failure", "exit_code": 1, "run_duration_seconds": 6.3}
+{"date": "2026-07-10", "script": "layer1_rag", "timestamp": "2026-07-10T05:42:40", "hostname": "jodeMacBook-Air", "raw_texts": 1, "chunks_produced": 0, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 31.2}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T05:42:40", "hostname": "jodeMacBook-Air", "job": "layer1_rag", "status": "success", "exit_code": 0, "run_duration_seconds": 32.4}
+{"date": "2026-07-10", "script": "hippocampus_formation", "timestamp": "2026-07-10T06:43:17", "hostname": "jodeMacBook-Air", "total_messages": 278, "meaningful_messages": 250, "filtered_messages": 28, "batches_success": 7, "batches_total": 7, "run_duration_seconds": 3636.9}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T06:43:17", "hostname": "jodeMacBook-Air", "job": "hippocampus_formation", "status": "success", "exit_code": 0, "run_duration_seconds": 3637.1}
+{"date": "2026-07-10", "script": "dayflow_daily_summary", "timestamp": "2026-07-10T06:43:17", "hostname": "jodeMacBook-Air", "observations_summarized": 0, "formation_success": false, "run_duration_seconds": 0.0}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T06:43:17", "hostname": "jodeMacBook-Air", "job": "dayflow_daily_summary", "status": "success", "exit_code": 0, "run_duration_seconds": 0.1}
+{"date": "2026-07-10", "script": "layer2_wiki", "timestamp": "2026-07-10T07:44:40", "hostname": "jodeMacBook-Air", "new_chunks_processed": 1, "hubble_results": 1, "topics_extracted_count": 1, "topics_extracted": ["test"], "hippocampus_context_chars": 0, "wiki_create_count": 1, "wiki_update_count": 0, "personal_hubble_count": 1, "personal_only_count": 0, "wiki_entries_written": 1, "llm_errors": 0, "llm_error_summary": "", "run_duration_seconds": 3682.2}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T07:44:40", "hostname": "jodeMacBook-Air", "job": "layer2_wiki", "status": "success", "exit_code": 0, "run_duration_seconds": 3682.6}
+{"date": "2026-07-10", "script": "run_due_jobs", "timestamp": "2026-07-10T07:44:40", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 6, "failures": 1}
+{"date": "2026-07-10", "script": "dashboard_state_sync", "timestamp": "2026-07-10T07:48:19", "hostname": "jodeMacBook-Air", "machine": "macbook", "status": "failure", "exit_code": 1}
+{"date": "2026-07-10", "script": "layer3_wechat", "timestamp": "2026-07-10T07:53:31", "hostname": "jodeMacBook-Air", "articles_indexed": 36, "run_duration_seconds": 11.5}
+{"date": "2026-07-10", "script": "job_runner", "timestamp": "2026-07-10T07:53:31", "hostname": "jodeMacBook-Air", "job": "layer3_wechat", "status": "success", "exit_code": 0, "run_duration_seconds": 11.6}
+{"date": "2026-07-10", "script": "run_due_jobs", "timestamp": "2026-07-10T07:53:31", "hostname": "jodeMacBook-Air", "machine": "macbook", "planned_jobs": 1, "failures": 0}
