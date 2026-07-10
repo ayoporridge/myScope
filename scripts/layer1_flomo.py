@@ -58,6 +58,7 @@ OPENCLI_CHROME_APP = os.environ.get("OPENCLI_CHROME_APP", "Google Chrome")
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_flomo_state.json"
 
 PAGE_LIMIT = 200
+OPENCLI_PAGE_ATTEMPTS = 2
 
 
 # ── 状态管理 ────────────────────────────────────────────────
@@ -244,6 +245,22 @@ def run_opencli_page(since: int, slug: str = "") -> subprocess.CompletedProcess:
     )
 
 
+def opencli_error_detail(result: subprocess.CompletedProcess) -> str:
+    raw = (result.stderr or result.stdout or "opencli failed").strip()
+    lines = []
+    for line in raw.splitlines():
+        clean = line.strip()
+        if clean.startswith("(node:") and ("Warning:" in clean or "[UNDICI-EHPA]" in clean):
+            continue
+        if clean.startswith("(Use `node"):
+            continue
+        if clean.startswith("Update available:") or clean.startswith("Run: npm install"):
+            continue
+        if clean:
+            lines.append(clean)
+    return (" ".join(lines) or raw)[-500:]
+
+
 def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
     if not wake_browser_bridge():
         raise RuntimeError("opencli browser bridge disconnected")
@@ -251,12 +268,18 @@ def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
     slug = ""
     unique: dict[str, dict] = {}
     while True:
-        result = run_opencli_page(cursor, slug)
+        for attempt in range(OPENCLI_PAGE_ATTEMPTS):
+            result = run_opencli_page(cursor, slug)
+            if result.returncode == 0 or (
+                result.returncode == 66 and "EMPTY_RESULT" in result.stderr
+            ):
+                break
+            if attempt + 1 < OPENCLI_PAGE_ATTEMPTS:
+                time.sleep(2)
         if result.returncode == 66 and "EMPTY_RESULT" in result.stderr:
             break
         if result.returncode != 0:
-            detail = (result.stderr or result.stdout or "opencli failed").strip()[:300]
-            raise RuntimeError(detail)
+            raise RuntimeError(opencli_error_detail(result))
         page = parse_opencli_rows(result.stdout)
         if not page:
             break

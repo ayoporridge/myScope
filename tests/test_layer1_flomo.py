@@ -125,6 +125,32 @@ class Layer1FlomoTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 self.flomo.collect_flomo(0)
 
+    def test_transient_opencli_failure_retries_once(self):
+        failed = subprocess.CompletedProcess([], 1, "", "temporary bridge failure")
+        recovered = subprocess.CompletedProcess([], 0, json.dumps([self.memo()]), "")
+
+        with patch.object(self.flomo, "wake_browser_bridge", return_value=True), patch.object(
+            self.flomo,
+            "run_opencli_page",
+            side_effect=[failed, recovered],
+        ) as run_page, patch.object(self.flomo.time, "sleep"):
+            rows, _ = self.flomo.collect_flomo(0)
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual(2, run_page.call_count)
+
+    def test_opencli_failure_keeps_error_after_warning_noise(self):
+        warning = "(node:1) Warning: " + "x" * 400
+        failed = subprocess.CompletedProcess([], 1, "", warning + "\nerror: auth failed")
+
+        with patch.object(self.flomo, "wake_browser_bridge", return_value=True), patch.object(
+            self.flomo,
+            "run_opencli_page",
+            return_value=failed,
+        ), patch.object(self.flomo.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "auth failed"):
+                self.flomo.collect_flomo(0)
+
     def test_full_page_without_cursor_progress_fails(self):
         stuck = [self.memo(f"memo-{i}") for i in range(200)]
         result = subprocess.CompletedProcess([], 0, json.dumps(stuck), "")
