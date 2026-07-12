@@ -20,7 +20,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
-from _metrics import record_last_run, record_metrics
+try:
+    from _metrics import record_last_run, record_metrics
+except ImportError:  # pragma: no cover - package import path for tests
+    from scripts._metrics import record_last_run, record_metrics
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -37,6 +40,7 @@ OBSIDIAN_VAULT = Path(os.environ.get("OBSIDIAN_VAULT", str(Path.home() / "Deskto
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_state.json"
 
 CHUNK_MAX = 200
+MIN_SLICEABLE_TEXT_CHARS = 30
 LLM_ERRORS: list[str] = []
 
 # 敏感内容过滤：跳过疑似 token/key/密码的文本
@@ -53,6 +57,10 @@ SENSITIVE_PATTERNS = re.compile(
 def is_sensitive(text: str) -> bool:
     """检测文本是否包含敏感凭据"""
     return bool(SENSITIVE_PATTERNS.search(text))
+
+
+def is_sliceable_input(text: str) -> bool:
+    return len((text or "").strip()) >= MIN_SLICEABLE_TEXT_CHARS
 
 
 # ── 状态管理 ────────────────────────────────────────────────
@@ -90,7 +98,7 @@ def collect_wechat(state: dict) -> list[dict]:
                     preview = item.get("preview", "")
                     match = re.search(r"<desc>(.*?)</desc>", preview)
                     content = match.group(1) if match else ""
-                    if content and len(content) > 10:
+                    if is_sliceable_input(content):
                         texts.append({
                             "text": content[:2000],
                             "source": "wechat:favorites"
@@ -114,7 +122,7 @@ def collect_wechat(state: dict) -> list[dict]:
                 messages = json.loads(output[start:end + 1])
                 for msg in messages:
                     content = msg.get("content", "") or msg.get("text", "")
-                    if content and len(content) > 10 and not is_sensitive(content):
+                    if is_sliceable_input(content) and not is_sensitive(content):
                         texts.append({
                             "text": content[:2000],
                             "source": "wechat:file_helper"
@@ -181,7 +189,7 @@ SLICE_PROMPT = """\
 
 def slice_text(text: str) -> list[dict]:
     """用 DeepSeek 把长文本切成记忆碎片"""
-    if len(text) < 30:
+    if not is_sliceable_input(text):
         return []
     if LLM_ERRORS:
         return []

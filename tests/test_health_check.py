@@ -122,7 +122,7 @@ class HealthCheckTests(unittest.TestCase):
         self.assertTrue(any("LLM 调用失败" in alert for alert in alerts))
         self.assertTrue(any("Insufficient Balance" in alert for alert in alerts))
 
-    def test_quality_alerts_on_rag_input_without_output_even_if_flomo_writes(self):
+    def test_quality_ignores_single_rag_input_without_output_when_flomo_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shared_metrics = root / "data" / "metrics"
@@ -154,10 +154,73 @@ class HealthCheckTests(unittest.TestCase):
 
             alerts = self.health.check_quality()
 
+        self.assertFalse(any(
+            "layer1_rag" in alert and "写入 0" in alert
+            for alert in alerts
+        ))
+
+    def test_quality_alerts_on_multiple_rag_inputs_without_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            today = datetime.now().strftime("%Y-%m-%d")
+            (shared_metrics / "layer1.jsonl").write_text(json.dumps({
+                "date": today,
+                "script": "layer1_rag",
+                "timestamp": f"{today}T05:00:00",
+                "hostname": "jodeMacBook-Air",
+                "raw_texts": 3,
+                "chunks_produced": 0,
+            }) + "\n")
+
+            self.health.METRICS_SHARED_DIR = shared_metrics
+            self.health.METRICS_FILE = logs / "missing_metrics.jsonl"
+
+            alerts = self.health.check_quality()
+
         self.assertTrue(any(
             "layer1_rag" in alert and "写入 0" in alert
             for alert in alerts
         ))
+
+    def test_quality_ignores_recovered_llm_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shared_metrics = root / "data" / "metrics"
+            logs = root / "logs"
+            shared_metrics.mkdir(parents=True)
+            logs.mkdir(parents=True)
+            today = datetime.now().strftime("%Y-%m-%d")
+            (shared_metrics / "wiki.jsonl").write_text(
+                json.dumps({
+                    "date": today,
+                    "script": "layer2_wiki",
+                    "timestamp": f"{today}T03:48:00",
+                    "hostname": "jodeMacBook-Air",
+                    "llm_errors": 1,
+                    "llm_error_summary": "Expecting ',' delimiter",
+                    "wiki_entries_written": 0,
+                }) + "\n" +
+                json.dumps({
+                    "date": today,
+                    "script": "layer2_wiki",
+                    "timestamp": f"{today}T03:54:00",
+                    "hostname": "jodeMacBook-Air",
+                    "llm_errors": 0,
+                    "llm_error_summary": "",
+                    "wiki_entries_written": 4,
+                }) + "\n"
+            )
+
+            self.health.METRICS_SHARED_DIR = shared_metrics
+            self.health.METRICS_FILE = logs / "missing_metrics.jsonl"
+
+            alerts = self.health.check_quality()
+
+        self.assertFalse(any("LLM 调用失败" in alert for alert in alerts))
 
     def test_quality_alerts_on_flomo_collect_errors(self):
         with tempfile.TemporaryDirectory() as tmp:

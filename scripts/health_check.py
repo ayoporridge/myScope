@@ -62,6 +62,7 @@ MONITORED_SCRIPTS = [
 ]
 
 LIVENESS_THRESHOLD_HOURS = 25
+RAG_ZERO_OUTPUT_ALERT_MIN_INPUTS = 3
 
 
 def _read_json_file(path: Path) -> dict:
@@ -348,24 +349,22 @@ def check_quality() -> list[str]:
             else:
                 inputs = int(metric.get("raw_texts", 0) or 0)
                 outputs = int(metric.get("chunks_produced", 0) or 0)
-                if inputs > 0 and outputs == 0:
+                if inputs >= RAG_ZERO_OUTPUT_ALERT_MIN_INPUTS and outputs == 0:
                     alerts.append(
                         f"🔴 `{host}` `layer1_rag` 有 {inputs} 条输入，但写入 0 条切片"
                     )
 
     # 检查 3：LLM provider 是否失败（余额、Key 或模型服务异常）
-    llm_metrics = [
+    llm_candidates = [
         m for m in recent_metrics
         if m.get("script") in ("layer1_rag", "layer1_flomo", "layer2_wiki")
         and m.get("date") in (today, yesterday)
-        and (m.get("llm_errors", 0) or m.get("llm_error_summary"))
     ]
-    if llm_metrics:
-        by_job = {}
-        for m in llm_metrics:
-            key = (m.get("hostname", "unknown"), m.get("script", "unknown"))
-            by_job[key] = m
-        for (host, script), metric in by_job.items():
+    if llm_candidates:
+        latest_by_job = _latest_metrics_by_job(llm_candidates)
+        for (host, script), metric in latest_by_job.items():
+            if not (metric.get("llm_errors", 0) or metric.get("llm_error_summary")):
+                continue
             summary = str(metric.get("llm_error_summary") or "LLM 调用失败").strip()
             alerts.append(f"🔴 `{host}` `{script}` LLM 调用失败：{summary[:180]}")
 
