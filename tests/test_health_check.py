@@ -249,6 +249,34 @@ class HealthCheckTests(unittest.TestCase):
         self.assertTrue(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
         self.assertTrue(any("opencli open failed" in alert for alert in alerts))
 
+    def test_quality_ignores_recovered_flomo_collect_error(self):
+        today = datetime.now().strftime("%Y-%m-%d")
+        alerts = self._quality_alerts_for([
+            {
+                "date": today,
+                "script": "layer1_flomo",
+                "timestamp": f"{today}T19:10:00",
+                "hostname": "mini",
+                "memos": 0,
+                "chunks": 0,
+                "collect_errors": 1,
+                "collect_error_summary": "fetch failed",
+            },
+            {
+                "date": today,
+                "script": "layer1_flomo",
+                "timestamp": f"{today}T19:20:00",
+                "hostname": "mini",
+                "new_memos": 0,
+                "documents_written": 0,
+                "chunks": 0,
+                "collect_errors": 0,
+                "collect_error_summary": "",
+            },
+        ])
+
+        self.assertFalse(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
+
     def test_quality_allows_successful_flomo_run_with_no_new_memos(self):
         today = datetime.now().strftime("%Y-%m-%d")
         alerts = self._quality_alerts_for([{

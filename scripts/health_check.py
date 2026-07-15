@@ -368,19 +368,18 @@ def check_quality() -> list[str]:
             summary = str(metric.get("llm_error_summary") or "LLM 调用失败").strip()
             alerts.append(f"🔴 `{host}` `{script}` LLM 调用失败：{summary[:180]}")
 
-    collect_metrics = [
+    collect_candidates = [
         m for m in recent_metrics
         if m.get("script") == "layer1_flomo"
         and m.get("date") in (today, yesterday)
-        and (m.get("collect_errors", 0) or m.get("collect_error_summary"))
     ]
-    if collect_metrics:
-        by_host = {}
-        for m in collect_metrics:
-            by_host[m.get("hostname", "unknown")] = m
-        for host, metric in by_host.items():
+    if collect_candidates:
+        latest_by_job = _latest_metrics_by_job(collect_candidates)
+        for (host, script), metric in latest_by_job.items():
+            if not (metric.get("collect_errors", 0) or metric.get("collect_error_summary")):
+                continue
             summary = str(metric.get("collect_error_summary") or "flomo 采集失败").strip()
-            alerts.append(f"🔴 `{host}` `layer1_flomo` 采集失败：{summary[:180]}")
+            alerts.append(f"🔴 `{host}` `{script}` 采集失败：{summary[:180]}")
 
     # 检查 4：wiki_entries 连续 3 天无新增（跨机器聚合）
     wiki_metrics = [
