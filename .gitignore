@@ -5,3 +5,11 @@ __pycache__/
 *.pyc
 .DS_Store
 .playwright-cli/
+
+# Runtime/shared state generated on each machine
+data/metrics/
+data/job_status/
+data/formation_quality/
+reports/
+output/
+.hippo_state.json

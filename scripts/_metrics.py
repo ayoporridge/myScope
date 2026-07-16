@@ -5,7 +5,7 @@ _metrics.py
 
 双机架构：
 - logs/metrics.jsonl         → 本机本地指标（gitignored，仅供本机 health_check）
-- data/metrics/<hostname>.jsonl → 跨机器共享指标（git 追踪，health_check 聚合所有机器）
+- data/metrics/<hostname>.jsonl → 跨机器共享指标（本地运行态，health_check 聚合所有机器）
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ METRICS_FILE = LOGS_DIR / "metrics.jsonl"
 JOB_STATUS_FILE = LOGS_DIR / "job_status.json"
 JOB_EVENTS_FILE = LOGS_DIR / "job_events.jsonl"
 
-# 跨机器共享指标目录（git 追踪）
+# 跨机器共享指标目录（本地运行态，git 忽略）
 METRICS_SHARED_DIR = Path(__file__).parent.parent / "data" / "metrics"
 HOSTNAME = socket.gethostname().split(".")[0]  # e.g. "xizhouMINIdeMac-mini"
 METRICS_SHARED_FILE = METRICS_SHARED_DIR / f"{HOSTNAME}.jsonl"
