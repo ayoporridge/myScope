@@ -25,6 +25,7 @@ except ImportError:  # pragma: no cover - package import path for tests
 PROJECT_DIR = Path(__file__).parent.parent
 PYTHON = sys.executable or "python3"
 SYNC_DISABLED = os.environ.get("MYSCOPE_DASHBOARD_SYNC_DISABLED", "").lower() in {"1", "true", "yes"}
+SYNC_PENDING_FILE = PROJECT_DIR / "logs" / "dashboard_state_sync.pending"
 DEEPSEEK_JOBS = frozenset({"layer1_rag", "layer1_flomo", "layer2_wiki"})
 DEEPSEEK_WINDOW_START = os.environ.get("MYSCOPE_DEEPSEEK_WINDOW_START", "19:00")
 DEEPSEEK_WINDOW_END = os.environ.get("MYSCOPE_DEEPSEEK_WINDOW_END", "08:00")
@@ -137,6 +138,34 @@ def plan_due_jobs(
     return planned
 
 
+def _set_sync_pending(pending: bool):
+    if pending:
+        SYNC_PENDING_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SYNC_PENDING_FILE.write_text(datetime.now().isoformat())
+        return
+    try:
+        SYNC_PENDING_FILE.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _sync_dashboard_state() -> tuple[str, int]:
+    sync_cmd = [PYTHON, "scripts/sync_dashboard_state.py"]
+    try:
+        result = subprocess.run(sync_cmd, cwd=str(PROJECT_DIR), timeout=180)
+        sync_exit_code = result.returncode
+        sync_status = "success" if result.returncode == 0 else "failure"
+    except subprocess.TimeoutExpired:
+        sync_exit_code = 124
+        sync_status = "timeout"
+    if sync_status == "success":
+        _set_sync_pending(False)
+    else:
+        _set_sync_pending(True)
+        print(f"[run_due_jobs] dashboard state sync {sync_status}", file=sys.stderr)
+    return sync_status, sync_exit_code
+
+
 def run_due_jobs(
     machine: str,
     *,
@@ -158,6 +187,15 @@ def run_due_jobs(
     if dry_run:
         return 0
     if not planned and skip_noop_metrics:
+        if machine == "macbook" and not SYNC_DISABLED and SYNC_PENDING_FILE.exists():
+            sync_status, sync_exit_code = _sync_dashboard_state()
+            record_metrics(
+                "dashboard_state_sync",
+                machine=machine,
+                status=sync_status,
+                exit_code=sync_exit_code,
+                pending_retry=True,
+            )
         return 0
 
     failures = 0
@@ -194,16 +232,7 @@ def run_due_jobs(
     sync_status = "disabled"
     sync_exit_code = 0
     if machine == "macbook" and not SYNC_DISABLED:
-        sync_cmd = [PYTHON, "scripts/sync_dashboard_state.py"]
-        try:
-            result = subprocess.run(sync_cmd, cwd=str(PROJECT_DIR), timeout=180)
-            sync_exit_code = result.returncode
-            sync_status = "success" if result.returncode == 0 else "failure"
-        except subprocess.TimeoutExpired:
-            sync_exit_code = 124
-            sync_status = "timeout"
-        if sync_status != "success":
-            print(f"[run_due_jobs] dashboard state sync {sync_status}", file=sys.stderr)
+        sync_status, sync_exit_code = _sync_dashboard_state()
     record_metrics(
         "dashboard_state_sync",
         machine=machine,

@@ -1,6 +1,8 @@
 import importlib
+import tempfile
 import unittest
 from datetime import datetime, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
 
@@ -70,13 +72,38 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertFalse(self.runner.is_deepseek_window(now=datetime(2026, 6, 24, 18, 59, 0)))
 
     def test_skip_noop_metrics_leaves_status_unchanged_when_nothing_due(self):
-        with patch.object(self.runner, "plan_due_jobs", return_value=[]), \
-             patch.object(self.runner, "record_metrics") as record_metrics, \
-             patch.object(self.runner, "record_job_result") as record_job_result:
-            exit_code = self.runner.run_due_jobs("macbook", skip_noop_metrics=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            pending = Path(tmp) / "dashboard_state_sync.pending"
+            with patch.object(self.runner, "SYNC_PENDING_FILE", pending), \
+                 patch.object(self.runner, "plan_due_jobs", return_value=[]), \
+                 patch.object(self.runner, "record_metrics") as record_metrics, \
+                 patch.object(self.runner, "record_job_result") as record_job_result:
+                exit_code = self.runner.run_due_jobs("macbook", skip_noop_metrics=True)
 
         self.assertEqual(0, exit_code)
         record_metrics.assert_not_called()
+        record_job_result.assert_not_called()
+
+    def test_skip_noop_metrics_retries_pending_dashboard_sync(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pending = Path(tmp) / "dashboard_state_sync.pending"
+            pending.write_text("2026-07-16T05:24:52")
+            with patch.object(self.runner, "SYNC_PENDING_FILE", pending), \
+                 patch.object(self.runner, "plan_due_jobs", return_value=[]), \
+                 patch.object(self.runner, "_sync_dashboard_state", return_value=("success", 0)) as sync_dashboard_state, \
+                 patch.object(self.runner, "record_metrics") as record_metrics, \
+                 patch.object(self.runner, "record_job_result") as record_job_result:
+                exit_code = self.runner.run_due_jobs("macbook", skip_noop_metrics=True)
+
+        self.assertEqual(0, exit_code)
+        sync_dashboard_state.assert_called_once_with()
+        record_metrics.assert_called_once_with(
+            "dashboard_state_sync",
+            machine="macbook",
+            status="success",
+            exit_code=0,
+            pending_retry=True,
+        )
         record_job_result.assert_not_called()
 
 
