@@ -58,7 +58,14 @@ OPENCLI_CHROME_APP = os.environ.get("OPENCLI_CHROME_APP", "Google Chrome")
 STATE_FILE = Path(__file__).parent.parent / "logs" / "layer1_flomo_state.json"
 
 PAGE_LIMIT = 200
-OPENCLI_PAGE_ATTEMPTS = 2
+OPENCLI_PAGE_ATTEMPTS = 4
+
+
+def is_retryable_opencli_error(detail: str) -> bool:
+    """Retry transient bridge/fetch failures, but fail fast on auth errors."""
+    normalized = detail.lower()
+    permanent_markers = ("auth", "login", "permission", "unauthorized", "forbidden")
+    return not any(marker in normalized for marker in permanent_markers)
 
 
 # ── 状态管理 ────────────────────────────────────────────────
@@ -274,8 +281,11 @@ def collect_flomo(cursor_updated_at: int) -> tuple[list[dict], int]:
                 result.returncode == 66 and "EMPTY_RESULT" in result.stderr
             ):
                 break
-            if attempt + 1 < OPENCLI_PAGE_ATTEMPTS:
-                time.sleep(2)
+            detail = opencli_error_detail(result)
+            if attempt + 1 < OPENCLI_PAGE_ATTEMPTS and is_retryable_opencli_error(detail):
+                time.sleep(min(2 ** attempt, 8))
+            else:
+                break
         if result.returncode == 66 and "EMPTY_RESULT" in result.stderr:
             break
         if result.returncode != 0:
