@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -205,6 +206,32 @@ class Layer1FlomoTests(unittest.TestCase):
             "cursor_updated_at": 0,
             "seen_memo_ids": [],
         }, state)
+
+    def test_retry_window_recognizes_success_from_same_night(self):
+        state = {"last_success_at": "2026-07-23T19:10:00+08:00"}
+
+        self.assertTrue(self.flomo.has_success_in_current_window(
+            state,
+            datetime.fromisoformat("2026-07-23T20:10:00+08:00"),
+        ))
+        self.assertTrue(self.flomo.has_success_in_current_window(
+            state,
+            datetime.fromisoformat("2026-07-24T06:30:00+08:00"),
+        ))
+        self.assertFalse(self.flomo.has_success_in_current_window(
+            state,
+            datetime.fromisoformat("2026-07-24T19:10:00+08:00"),
+        ))
+
+    def test_scheduled_retry_skips_after_nightly_success(self):
+        with patch.object(
+            self.flomo,
+            "has_success_in_current_window",
+            return_value=True,
+        ), patch.object(self.flomo, "run_once") as run_once:
+            self.assertEqual(0, self.flomo.main(["--retry-if-needed"]))
+
+        run_once.assert_not_called()
 
     def test_ingest_documents_returns_every_task_uid(self):
         first = Mock()

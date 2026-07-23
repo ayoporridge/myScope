@@ -8,6 +8,7 @@ OpenCLI 结构化采集 → 稳定 ID 文档 → Meilisearch memory_chunks
 每天 19:10 运行
 """
 
+import argparse
 import os
 import fcntl
 import json
@@ -17,7 +18,7 @@ import shutil
 import subprocess
 import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -82,6 +83,26 @@ def load_state() -> dict:
         "cursor_updated_at": int(data.get("cursor_updated_at", 0) or 0),
         "seen_memo_ids": sorted(set(map(str, data.get("seen_memo_ids", [])))),
     }
+
+
+def retry_window_start(now: datetime) -> datetime:
+    start_day = now if now.hour >= 19 else now - timedelta(days=1)
+    return start_day.replace(hour=19, minute=0, second=0, microsecond=0)
+
+
+def has_success_in_current_window(state: dict, now: datetime | None = None) -> bool:
+    last_success_at = state.get("last_success_at")
+    if not last_success_at:
+        return False
+    try:
+        last_success = datetime.fromisoformat(str(last_success_at))
+    except (TypeError, ValueError):
+        return False
+    current = now or datetime.now().astimezone()
+    window_start = retry_window_start(current)
+    if last_success.tzinfo is None and window_start.tzinfo is not None:
+        last_success = last_success.replace(tzinfo=window_start.tzinfo)
+    return last_success >= window_start
 
 
 def save_state(state: dict) -> None:
@@ -431,8 +452,18 @@ def run_once() -> int:
             fcntl.flock(lock_handle, fcntl.LOCK_UN)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--retry-if-needed",
+        action="store_true",
+        help="Skip scheduled retries after this nightly window has succeeded.",
+    )
+    args = parser.parse_args(argv)
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 开始 flomo 增量采集（Mac mini）")
+    if args.retry_if_needed and has_success_in_current_window(load_state()):
+        print("  本夜已成功采集，跳过补偿执行")
+        return 0
     return run_once()
 
 

@@ -26,7 +26,7 @@ class HealthCheckTests(unittest.TestCase):
         for key, value in self.originals.items():
             setattr(self.health, key, value)
 
-    def _quality_alerts_for(self, metrics):
+    def _quality_alerts_for(self, metrics, now=None):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shared_metrics = root / "data" / "metrics"
@@ -38,7 +38,7 @@ class HealthCheckTests(unittest.TestCase):
             )
             self.health.METRICS_SHARED_DIR = shared_metrics
             self.health.METRICS_FILE = logs / "missing_metrics.jsonl"
-            return self.health.check_quality()
+            return self.health.check_quality(now=now)
 
     def test_liveness_checks_local_last_run_when_shared_status_exists(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -276,6 +276,52 @@ class HealthCheckTests(unittest.TestCase):
         ])
 
         self.assertFalse(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
+
+    def test_quality_ignores_failure_after_success_in_same_nightly_window(self):
+        now = datetime.fromisoformat("2026-07-24T06:30:00")
+        alerts = self._quality_alerts_for([
+            {
+                "date": "2026-07-23",
+                "script": "layer1_flomo",
+                "timestamp": "2026-07-23T19:10:00",
+                "hostname": "mini",
+                "collect_errors": 0,
+                "collect_error_summary": "",
+            },
+            {
+                "date": "2026-07-23",
+                "script": "layer1_flomo",
+                "timestamp": "2026-07-23T20:10:00",
+                "hostname": "mini",
+                "collect_errors": 1,
+                "collect_error_summary": "fetch failed",
+            },
+        ], now=now)
+
+        self.assertFalse(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
+
+    def test_quality_does_not_use_success_from_previous_nightly_window(self):
+        now = datetime.fromisoformat("2026-07-24T06:30:00")
+        alerts = self._quality_alerts_for([
+            {
+                "date": "2026-07-23",
+                "script": "layer1_flomo",
+                "timestamp": "2026-07-23T07:20:00",
+                "hostname": "mini",
+                "collect_errors": 0,
+                "collect_error_summary": "",
+            },
+            {
+                "date": "2026-07-23",
+                "script": "layer1_flomo",
+                "timestamp": "2026-07-23T19:10:00",
+                "hostname": "mini",
+                "collect_errors": 1,
+                "collect_error_summary": "fetch failed",
+            },
+        ], now=now)
+
+        self.assertTrue(any("layer1_flomo" in alert and "采集失败" in alert for alert in alerts))
 
     def test_quality_allows_successful_flomo_run_with_no_new_memos(self):
         today = datetime.now().strftime("%Y-%m-%d")

@@ -9,7 +9,7 @@
 | 时间 | 脚本 | 说明 |
 |------|------|------|
 | 02:30 | layer3_index | FreshRSS → hubble_radius |
-| 19:10（失败时 19:25/19:40/20:10 自动重试） | layer1_flomo | flomo → memory_chunks（DeepSeek） |
+| 19:10（仅失败时 19:25/19:40/20:10 自动重试） | layer1_flomo | flomo → memory_chunks |
 | 06:00 | hippocampus_formation | Codex/Hermes/Clacky → Anda |
 | 07:20 | layer2_wiki | 跨层综合 → wiki_entries（DeepSeek） |
 | 06:30 | health_check | 健康检查 → 飞书告警 |

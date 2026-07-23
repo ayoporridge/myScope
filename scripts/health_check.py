@@ -102,6 +102,15 @@ def _latest_metrics_by_job(metrics: list[dict]) -> dict[tuple[str, str], dict]:
     return by_job
 
 
+def _nightly_window_start(now: datetime) -> datetime:
+    start_day = now if now.hour >= 19 else now - timedelta(days=1)
+    return start_day.replace(hour=19, minute=0, second=0, microsecond=0)
+
+
+def _metric_timestamp(metric: dict) -> datetime | None:
+    return _parse_iso_datetime(metric.get("timestamp"))
+
+
 def _layer1_chunks(metric: dict) -> int:
     if metric.get("script") == "layer1_flomo":
         return int(metric.get("chunks", 0) or 0)
@@ -287,7 +296,7 @@ def _load_metrics(days: int = 3) -> list[dict]:
     return entries
 
 
-def check_quality() -> list[str]:
+def check_quality(now: datetime | None = None) -> list[str]:
     """从多机器 metrics 检查近期质量指标"""
     alerts = []
 
@@ -295,8 +304,9 @@ def check_quality() -> list[str]:
     if not recent_metrics:
         return []
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    current = now or datetime.now()
+    today = current.strftime("%Y-%m-%d")
+    yesterday = (current - timedelta(days=1)).strftime("%Y-%m-%d")
 
     # 检查 1：hippocampus formation 有效消息数（跨机器聚合）
     formation_metrics = [
@@ -372,10 +382,23 @@ def check_quality() -> list[str]:
         m for m in recent_metrics
         if m.get("script") == "layer1_flomo"
         and m.get("date") in (today, yesterday)
+        and (_metric_timestamp(m) or datetime.min) >= _nightly_window_start(current)
     ]
     if collect_candidates:
-        latest_by_job = _latest_metrics_by_job(collect_candidates)
-        for (host, script), metric in latest_by_job.items():
+        candidates_by_job: dict[tuple[str, str], list[dict]] = {}
+        for metric in collect_candidates:
+            key = (
+                metric.get("hostname", "unknown"),
+                metric.get("script", "unknown"),
+            )
+            candidates_by_job.setdefault(key, []).append(metric)
+        for (host, script), attempts in candidates_by_job.items():
+            if any(
+                not (m.get("collect_errors", 0) or m.get("collect_error_summary"))
+                for m in attempts
+            ):
+                continue
+            metric = max(attempts, key=lambda m: str(m.get("timestamp", "")))
             if not (metric.get("collect_errors", 0) or metric.get("collect_error_summary")):
                 continue
             summary = str(metric.get("collect_error_summary") or "flomo 采集失败").strip()
