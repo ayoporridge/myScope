@@ -33,16 +33,18 @@ if [[ "$MACHINE" == "macbook" && -f "$PLIST_DIR/com.myscope.run-due-jobs.plist" 
   PLISTS=("$PLIST_DIR/com.myscope.run-due-jobs.plist")
 fi
 
-# 先卸载旧任务（如果有）。MacBook 现在使用 run_due_jobs 统一补跑，
-# 这里清理历史 per-script LaunchAgent，避免重复采集。
-for loaded in "$LAUNCH_AGENTS"/com.myscope.*.plist; do
-  [[ -e "$loaded" ]] || continue
-  old_label=$(grep -A1 '<key>Label</key>' "$loaded" | grep '<string>' | sed 's/.*<string>\(.*\)<\/string>/\1/')
-  if [[ -n "$old_label" ]]; then
-    echo "卸载已存在任务: $old_label"
-    launchctl unload "$loaded" 2>/dev/null || true
-  fi
-done
+# MacBook 现在使用 run_due_jobs 统一补跑，需要清理历史 per-script
+# LaunchAgent。Mac mini 只更新安装清单中的任务，保留 dashboard 等独立服务。
+if [[ "$MACHINE" == "macbook" ]]; then
+  for loaded in "$LAUNCH_AGENTS"/com.myscope.*.plist; do
+    [[ -e "$loaded" ]] || continue
+    old_label=$(grep -A1 '<key>Label</key>' "$loaded" | grep '<string>' | sed 's/.*<string>\(.*\)<\/string>/\1/')
+    if [[ -n "$old_label" ]]; then
+      echo "卸载已存在任务: $old_label"
+      launchctl unload "$loaded" 2>/dev/null || true
+    fi
+  done
+fi
 
 for plist in "${PLISTS[@]}"; do
   label=$(grep -A1 '<key>Label</key>' "$plist" | grep '<string>' | sed 's/.*<string>\(.*\)<\/string>/\1/')
