@@ -20,7 +20,7 @@
 
 MacBook 还可以安装每日 06:05 的系统唤醒计划，让它赶在 06:30 健康检查前补跑本机数据任务。
 
-DeepSeek 相关任务（`layer1_rag`、`layer1_flomo`、`layer2_wiki`）只会在 `19:00` 到次日 `08:00` 之间由 runner 启动。
+MacBook runner 中的 DeepSeek 任务 `layer1_rag` 只会在 `19:00` 到次日 `08:00` 之间启动。`layer2_wiki` 由 Mac mini 在 07:20 单点执行。
 
 | plist | 说明 |
 |------|------|

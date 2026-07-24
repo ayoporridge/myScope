@@ -27,7 +27,8 @@ cron 或 launchd 只负责“经常唤起检查器”，真正的补跑判断由
 - `dayflow_sync.py` — Dayflow 屏幕活动 → memory_chunks
 - `hippocampus_formation.py` — 对话记忆 → Anda 图谱
 - `dayflow_daily_summary.py` — Dayflow 日摘要 → Anda
-- `layer2_wiki.py` — 读取 memory_chunks + hubble_radius → wiki_entries
+
+`layer2_wiki.py` 读取全局索引，只由 Mac mini 的 07:20 LaunchAgent 执行，不进入 MacBook catch-up runner。
 
 ---
 
@@ -89,4 +90,4 @@ MacBook 现在默认只安装 `com.myscope.run-due-jobs`，登录时运行一次
 sudo bash /Users/xz/Documents/myScope/scripts/install_macbook_wake_schedule.sh
 ```
 
-`run_due_jobs` 会继续遵守 DeepSeek 时间窗：`layer1_rag`、`layer1_flomo`、`layer2_wiki` 只在 `19:00-08:00` 之间启动。
+`run_due_jobs` 会继续遵守 DeepSeek 时间窗：MacBook 的 `layer1_rag` 只在 `19:00-08:00` 之间启动；Mac mini 的 `layer1_flomo` 和 `layer2_wiki` 固定安排在该窗口内。

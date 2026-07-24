@@ -18,7 +18,7 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertTrue(self.runner.is_due("2026-06-23T13:00:00", 24, now=now))
         self.assertFalse(self.runner.is_due("2026-06-24T13:30:00", 24, now=now))
 
-    def test_plan_due_jobs_keeps_layer2_after_collectors(self):
+    def test_plan_due_jobs_keeps_macbook_collectors_without_layer2(self):
         now = datetime(2026, 6, 24, 19, 30, 0)
         status = {
             "jodeMacBook-Air": {
@@ -34,9 +34,19 @@ class RunDueJobsTests(unittest.TestCase):
         planned = self.runner.plan_due_jobs("macbook", status, hostname="jodeMacBook-Air", now=now)
         names = [job.name for job in planned]
 
-        self.assertEqual("layer2_wiki", names[-1])
+        self.assertNotIn("layer2_wiki", names)
         self.assertIn("dayflow_daily_summary", names)
         self.assertIn("dayflow_sync", names)
+
+    def test_layer2_wiki_is_owned_by_macmini_only(self):
+        self.assertNotIn(
+            "layer2_wiki",
+            [job.name for job in self.runner.MACHINE_JOBS["macbook"]],
+        )
+        self.assertIn(
+            "layer2_wiki",
+            [job.name for job in self.runner.MACHINE_JOBS["macmini"]],
+        )
 
     def test_deepseek_jobs_only_run_in_night_window(self):
         status = {
@@ -63,7 +73,7 @@ class RunDueJobsTests(unittest.TestCase):
         self.assertNotIn("layer1_rag", [job.name for job in daytime])
         self.assertNotIn("layer2_wiki", [job.name for job in daytime])
         self.assertIn("layer1_rag", [job.name for job in night])
-        self.assertIn("layer2_wiki", [job.name for job in night])
+        self.assertNotIn("layer2_wiki", [job.name for job in night])
 
     def test_deepseek_window_crosses_midnight(self):
         self.assertTrue(self.runner.is_deepseek_window(now=datetime(2026, 6, 24, 19, 0, 0)))

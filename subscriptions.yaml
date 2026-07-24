@@ -6,13 +6,13 @@
 blogs:
   folder: "Blogs"
   feeds:
-    - name: "乔木的博客"
+    - name: "乔木博客"
       feed_url: "https://blog.qiaomu.ai/feed.xml"
 
     - name: "潮流周刊"
       feed_url: "https://weekly.tw93.fun/rss.xml"
 
-    - name: "Tw93"
+    - name: "Tw93 Blog"
       feed_url: "https://tw93.fun/feed.xml"
 
 # ── 小宇宙播客 ─────────────────────────────────────────
@@ -25,17 +25,8 @@ xiaoyuzhou:
     - name: "无人知晓"
       feed_url: "https://feed.xyzfm.space/ypn9dydpbxpc"
 
-    - name: "声东击西"
-      feed_url: "https://feeds.fireside.fm/shengdongjixi/rss"
-
     - name: "枫言枫语"
       feed_url: "https://justinyan.me/feed/podcast"
-
-    - name: "Orpheus微见"
-      feed_url: "https://feed.xyzfm.space/4l9ymq4eapt9"
-
-    - name: "自然之路"
-      feed_url: "https://feed.xyzfm.space/aj4lpfud3cbp"
 
     - name: "跨国串门儿计划"
       feed_url: "https://feed.xyzfm.space/r8t44lmvu99m"
@@ -46,38 +37,23 @@ xiaoyuzhou:
     - name: "面基"
       feed_url: "https://feed.xyzfm.space/6hpdgggtxpxb"
 
-    - name: "来都来了 | 听了再走"
-      feed_url: "http://www.ximalaya.com/album/31677988.xml"
-
     - name: "42章经"
       feed_url: "https://feed.xyzfm.space/evgg6xle9rdc"
 
-    - name: "十字路口 Crossing"
+    - name: "十字路口Crossing"
       feed_url: "https://feed.xyzfm.space/68fyjknth9hj"
-
-    - name: "津津有味"
-      feed_url: "https://feeds.daopub.com/jjyw.xml"
-
-    - name: "津津乐道"
-      feed_url: "https://feeds.daopub.com/all.xml"
-
-    - name: "一篇空白"
-      feed_url: "http://www.ximalaya.com/album/57338219.xml"
 
     - name: "硬地骇客"
       feed_url: "https://feed.xyzfm.space/byhkljlbep9j"
 
-    - name: "PB计划"
-      feed_url: "http://www.ximalaya.com/album/55740909.xml"
-
     - name: "信号与噪声"
       feed_url: "http://192.168.1.21:1200/xiaoyuzhou/podcast/6819d5a7e37664602a344e0e"
 
-    - name: "超业余选手"
-      skip: true  # 待补充
+    - name: "硅谷101"
+      feed_url: "https://feeds.fireside.fm/sv101/rss"
 
-    - name: "出厂设置 OTD"
-      skip: true  # 待补充
+    - name: "诗梳风"
+      feed_url: "https://cdn.shishufeng.com/feed/podcast"
 
 # 微信公众号（通过 opencli wx biz-articles 从本地缓存读取）
 wechat:

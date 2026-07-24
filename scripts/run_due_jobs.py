@@ -46,7 +46,6 @@ MACHINE_JOBS: dict[str, tuple[Job, ...]] = {
         Job("layer1_rag", (PYTHON, "scripts/layer1_rag.py"), 20, 3600),
         Job("hippocampus_formation", (PYTHON, "scripts/hippocampus_formation.py"), 20, 3600),
         Job("dayflow_daily_summary", (PYTHON, "scripts/dayflow_daily_summary.py"), 20, 1800),
-        Job("layer2_wiki", (PYTHON, "scripts/layer2_wiki.py"), 20, 3600),
     ),
     "macmini": (
         Job("layer3_index", (PYTHON, "scripts/layer3_index.py"), 20, 3600),

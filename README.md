@@ -162,7 +162,8 @@ sudo bash scripts/install_macbook_wake_schedule.sh # 每天 06:05 唤醒一次
 | 到期时 | `layer1_rag.py` | 微信+Obsidian → `memory_chunks`（仅 19:00-08:00） |
 | 到期时 | `hippocampus_formation.py` | Claude/Clacky → Anda |
 | 到期时 | `dayflow_daily_summary.py` | Dayflow 日摘要 → Anda |
-| 到期时 | `layer2_wiki.py` | 跨层综合 → `wiki_entries`（仅 19:00-08:00） |
+
+`layer2_wiki.py` 读取的是全局索引，不依赖 MacBook 本地文件，因此只由 Mac mini 在 07:20 执行，避免双机重复调用 DeepSeek 和重复写入。
 
 ---
 
