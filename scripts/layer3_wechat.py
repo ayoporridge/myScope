@@ -31,6 +31,7 @@ MEMORY_TOKEN = os.environ.get("MEMORY_API_TOKEN", "")
 INDEX_NAME   = "hubble_radius"
 
 OPENCLI = "/Users/xz/.local/nodejs/bin/opencli"
+OPENCLI_TIMEOUT_SECONDS = int(os.environ.get("WXCLI_TIMEOUT_SECONDS", "420"))
 SUBS_PATH = Path(__file__).parent.parent / "subscriptions.yaml"
 
 # 状态文件：记录上次拉取的时间戳
@@ -66,7 +67,12 @@ def fetch_articles(since: str, limit: int = 500) -> list[dict] | None:
     """调用 opencli wx biz-articles 获取文章列表"""
     cmd = [OPENCLI, "wx", "biz-articles", "--json", "--limit", str(limit), "--since", since]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=OPENCLI_TIMEOUT_SECONDS,
+        )
         if result.returncode != 0:
             print(f"  [错误] opencli 返回 {result.returncode}: {result.stderr[:200]}")
             return None
@@ -80,7 +86,7 @@ def fetch_articles(since: str, limit: int = 500) -> list[dict] | None:
             return None
         return json.loads(output[start:end + 1])
     except subprocess.TimeoutExpired:
-        print("  [超时] opencli 执行超过 60s")
+        print(f"  [超时] opencli 执行超过 {OPENCLI_TIMEOUT_SECONDS}s")
         return None
     except Exception as e:
         print(f"  [异常] {e}")

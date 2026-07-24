@@ -21,10 +21,11 @@ class Layer3WechatTests(unittest.TestCase):
             stderr="env: node: No such file or directory",
         )
 
-        with patch.object(self.layer3.subprocess, "run", return_value=failed), redirect_stdout(io.StringIO()):
+        with patch.object(self.layer3.subprocess, "run", return_value=failed) as run, redirect_stdout(io.StringIO()):
             articles = self.layer3.fetch_articles("2026-06-21")
 
         self.assertIsNone(articles)
+        self.assertEqual(self.layer3.OPENCLI_TIMEOUT_SECONDS, run.call_args.kwargs["timeout"])
 
 
 if __name__ == "__main__":
